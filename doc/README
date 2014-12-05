@@ -1,6 +1,7 @@
 Docs compilation process
 ========================
-
-$ cd doc/
-$ qdoc ../doc/example.qdocconf
+$ make build/
+$ cd build/
+$ qmake ../doc/
+$ make docs
 Documentation will appear in the './doc/' folder.
