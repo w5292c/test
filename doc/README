@@ -1,0 +1,6 @@
+Docs compilation process
+========================
+
+$ cd doc/
+$ qdoc ../doc/example.qdocconf
+Documentation will appear in the './doc/' folder.

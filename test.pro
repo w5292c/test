@@ -1,7 +1,4 @@
-TEMPLATE = app
-TARGET = test
-INCLUDEPATH += . src
+TEMPLATE = subdirs
 
-# Input
-HEADERS += src/testbase.h
-SOURCES += src/main.cpp src/testbase.cpp
+SUBDIRS = \
+  src
