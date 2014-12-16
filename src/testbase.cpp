@@ -1,5 +1,8 @@
 #include "testbase.h"
 
+#include <QMetaEnum>
+#include <QDebug>
+
 /*!
     \class TestBase
     \inmodule QDoc Examples
@@ -21,8 +24,14 @@
 /*!
     Constructs a test object with zero value.
 */
-TestBase::TestBase() : m_value(0)
+TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone)
 {
+  connect(this, SIGNAL(testignal(IndexId)), this, SLOT(start(IndexId)));
+
+  m_timer.setSingleShot(false);
+  m_timer.setInterval(2000);
+  connect(&m_timer, SIGNAL(timeout()), this, SLOT(onTimer()));
+  m_timer.start();
 }
 
 /*!
@@ -30,6 +39,7 @@ TestBase::TestBase() : m_value(0)
 */
 TestBase::~TestBase()
 {
+  m_timer.stop();
 }
 
 /*!
@@ -46,4 +56,19 @@ int TestBase::getValue() const
 void TestBase::setValue(int newValue)
 {
   m_value = newValue;
+}
+
+void TestBase::onTimer()
+{
+  emit testignal(static_cast<IndexId>(m_index));
+
+  if (IndexIdLast == m_index) {
+    m_index = IndexIdNone;
+  }
+  ++m_index;
+}
+
+void TestBase::start(IndexId indexId)
+{
+  qDebug() << "[TestBase::start]: " << indexId;
 }

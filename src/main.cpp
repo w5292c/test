@@ -34,5 +34,5 @@ int main(int argc, char **argv)
   TheMap.insert(1, "Here is the 1st updated element");
   qDebug() << "Here is the map:" << TheMap;
 
-  return 0;
+  return app.exec();
 }
