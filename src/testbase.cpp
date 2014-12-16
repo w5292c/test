@@ -64,8 +64,9 @@ void TestBase::onTimer()
 
   if (IndexIdLast == m_index) {
     m_index = IndexIdNone;
+  } else {
+    ++m_index;
   }
-  ++m_index;
 }
 
 void TestBase::start(IndexId indexId)
