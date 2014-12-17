@@ -2,6 +2,7 @@
 
 #include <QMap>
 #include <QDebug>
+#include <wbxml.h>
 #include <QCoreApplication>
 
 /*!
@@ -33,6 +34,16 @@ int main(int argc, char **argv)
   TheMap.insert(4, "The 4th element");
   TheMap.insert(1, "Here is the 1st updated element");
   qDebug() << "Here is the map:" << TheMap;
+
+  const WB_UTINY TheData[] = {
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+  };
+  WB_UTINY *const encoded = wbxml_base64_encode (TheData, sizeof (TheData));
+//  WBXML_DECLARE(WB_LONG) wbxml_base64_decode(const WB_UTINY *buffer, WB_UTINY **result);
+  qDebug() << "Encoded: " << (const char *)encoded;
+
+  wbxml_free (encoded);
 
   return app.exec();
 }
