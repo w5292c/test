@@ -1,7 +1,11 @@
 #include "testbase.h"
 
-#include <QMetaEnum>
 #include <QDebug>
+#include <QMetaEnum>
+#include <QNetworkReply>
+#include <QAuthenticator>
+#include <QNetworkRequest>
+#include <QProcessEnvironment>
 
 /*!
     \class TestBase
@@ -21,10 +25,15 @@
     lose precision.
 */
 
+namespace {
+const char *const PROTOCOL_VERSIONS_HEADER = "MS-ASProtocolVersions";
+const char *const PROTOCOL_COMMANDS_HEADER = "MS-ASProtocolCommands";
+}
+
 /*!
     Constructs a test object with zero value.
 */
-TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone)
+TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone), m_reply(NULL)
 {
   connect(this, SIGNAL(testignal(IndexId)), this, SLOT(start(IndexId)));
 
@@ -32,6 +41,14 @@ TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone)
   m_timer.setInterval(2000);
   connect(&m_timer, SIGNAL(timeout()), this, SLOT(onTimer()));
   m_timer.start();
+
+  connect(&m_manager, SIGNAL(finished(QNetworkReply*)),
+          this, SLOT(onRequestReady(QNetworkReply*)));
+  connect(&m_manager, SIGNAL(authenticationRequired(QNetworkReply*, QAuthenticator*)),
+          this, SLOT(authentication(QNetworkReply*, QAuthenticator*)));
+
+  // send the OPTIONS request
+  sendRequest();
 }
 
 /*!
@@ -72,4 +89,47 @@ void TestBase::onTimer()
 void TestBase::start(IndexId indexId)
 {
   qDebug() << "[TestBase::start]: " << indexId;
+}
+
+void TestBase::authentication(QNetworkReply *reply, QAuthenticator *authenticator)
+{
+  qDebug() << "[TestBase::authentication]: " << reply << ", " << authenticator;
+  const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
+  const QString &userId = env.value("MY_USER", "<user>");
+  const QString &passwd = env.value("MY_PASS", "<password>");
+  authenticator->setUser(userId);
+  authenticator->setPassword(passwd);
+}
+
+void TestBase::sendRequest()
+{
+  const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
+  const QString &serverAddress = env.value("MY_ADDR", "exchange-server.com");
+  const QString &serverPort = env.value("MY_PORT", "443");
+  const QUrl &serverUrl = QUrl(QLatin1String("https://") + serverAddress + ":" + serverPort + "/Microsoft-Server-ActiveSync");
+  qDebug() << "[TestBase::sendRequest] URL: " << serverUrl;
+
+  if (!m_reply) {
+    QNetworkRequest request(serverUrl);
+    m_reply = m_manager.sendCustomRequest(request, "OPTIONS");
+    connect(m_reply, SIGNAL(finished()), this, SLOT(onOptionsRequestReady()));
+  }
+}
+
+void TestBase::onRequestReady(QNetworkReply *reply)
+{
+  Q_UNUSED(reply);
+#if 0
+  // This code works as well, but we will log the results in 'TestBase::onOptionsRequestReady'
+  qDebug() << "[TestBase::onRequestReady] MS-ASProtocolVersions:" << reply->rawHeader(PROTOCOL_VERSIONS_HEADER);
+  qDebug() << "[TestBase::onRequestReady] MS-ASProtocolCommands:" << reply->rawHeader(PROTOCOL_COMMANDS_HEADER);
+#endif
+}
+
+void TestBase::onOptionsRequestReady()
+{
+  qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolVersions:" << m_reply->rawHeader(PROTOCOL_VERSIONS_HEADER);
+  qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolCommands:" << m_reply->rawHeader(PROTOCOL_COMMANDS_HEADER);
+  delete m_reply;
+  m_reply = NULL;
 }

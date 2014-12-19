@@ -1,4 +1,13 @@
 test
 ====
-
 Test repository to check how github works
+
+Testing ActiveSync protocol
+===========================
+1) OPTIONS request
+==================
+Configuration:
+$ export MY_USER="<DOMAIN>/<user-name>"
+$ export MY_PASS="<password>"
+$ export MY_ADDR="exchange-server.com"
+$ export MY_PORT="443" (default port);

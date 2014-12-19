@@ -2,6 +2,7 @@
 #define TEST_BASE_H
 
 #include <QTimer>
+#include <QNetworkAccessManager>
 #include <QtCore/qmetaobject.h>
 #include <QtCore/qdebug.h>
 
@@ -37,14 +38,22 @@ public:
 public slots:
   void onTimer();
   void start(IndexId indexId);
+  void onOptionsRequestReady();
+  void onRequestReady(QNetworkReply *reply);
+  void authentication(QNetworkReply *reply, QAuthenticator *authenticator);
 
 Q_SIGNALS:
   void testignal(IndexId indexId);
 
 private:
+  void sendRequest();
+
+private:
   int m_value;
   int m_index;
   QTimer m_timer;
+  QNetworkReply *m_reply;
+  QNetworkAccessManager m_manager;
 };
 
 Q_DECLARE_METATYPE(TestBase::IndexId)
