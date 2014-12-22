@@ -7,10 +7,11 @@ QT += network
 
 INCLUDEPATH += .
 
-# Input
 HEADERS += \
+  utils.h \
   testbase.h
 
 SOURCES += \
   main.cpp \
+  utils.cpp \
   testbase.cpp
