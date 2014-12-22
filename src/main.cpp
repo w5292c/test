@@ -130,6 +130,10 @@ int main(int argc, char **argv)
   qDebug() << (const char *)pXml;
 
   qDebug() << "********************************************************************************************";
+  WBXMLTree *resTree = NULL;
+  const WBXMLError lastRes = wbxml_tree_from_wbxml(testWbxml, sizeof (testWbxml), WBXML_LANG_AIRSYNC, &resTree);
+  Utils::logNode(qDebug(), resTree->root);
+  qDebug() << "********************************************************************************************";
 
   return app.exec();
 }
