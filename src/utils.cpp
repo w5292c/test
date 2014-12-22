@@ -25,6 +25,7 @@
 #include "utils.h"
 
 #include <QDebug>
+#include <wbxml.h>
 #include <string.h>
 
 void Utils::hexDump(const char *pData)
@@ -62,4 +63,93 @@ void Utils::hexDump(const unsigned char *pData, int length)
   }
   debug << "\n";
   debug.space();
+}
+
+QString Utils::hexTreeNodeType(int treeNodeType)
+{
+  QString name;
+  switch (treeNodeType) {
+  case WBXML_TREE_ELEMENT_NODE:
+    name = "WBXML_TREE_ELEMENT_NODE";
+    break;
+  case WBXML_TREE_TEXT_NODE:
+    name = "WBXML_TREE_TEXT_NODE";
+    break;
+  case WBXML_TREE_CDATA_NODE:
+    name = "WBXML_TREE_CDATA_NODE";
+    break;
+  case WBXML_TREE_PI_NODE:
+    name = "WBXML_TREE_PI_NODE";
+    break;
+  case WBXML_TREE_TREE_NODE:
+    name = "WBXML_TREE_TREE_NODE";
+    break;
+  default:
+    name = "WBXML_TREE_UNDEFINED";
+    break;
+  }
+  return name;
+}
+
+QDebug Utils::logNodeName(QDebug debug, WBXMLTag *nodeName)
+{
+  if (!nodeName) return debug;
+
+  if (WBXML_VALUE_TOKEN == nodeName->type) {
+    debug << "[WBXML_VALUE_TOKEN: ";
+    const WBXMLTagEntry *const token = nodeName->u.token;
+    if (token) {
+      const WB_TINY *const xmlName = token->xmlName;
+      debug << "ENTRY: ";
+      if (xmlName) {
+        debug << "\"" << xmlName << "\", ";
+      } else {
+        debug << "<null>, ";
+      }
+      debug << "PAGE: " << token->wbxmlCodePage << ", TOKEN: " << token->wbxmlToken;
+    } else {
+      debug << "<null>";
+    }
+    debug << "]";
+  } else if (WBXML_VALUE_LITERAL  == nodeName->type) {
+    debug << "[WBXML_VALUE_LITERAL: \"" << (const char *)wbxml_buffer_get_cstr(nodeName->u.literal) << "\"]";
+  } else {
+    debug << "[WBXML_VALUE_UNKNOWN]";
+  }
+
+  return debug;
+}
+
+QDebug Utils::logNode(QDebug debug, WBXMLTreeNode *node, int level)
+{
+  // check if the 'node' exists
+  if (!node) return debug;
+
+  debug.nospace();
+  for (int i = 0; i < level; ++i) {
+    debug << "  ";
+  }
+  const char *content = (const char *)wbxml_buffer_get_cstr(node->content);
+  if (!strlen(content)) {
+    debug << "Tree node type: " << hexTreeNodeType(node->type);
+  } else {
+    debug << "Tree node type: " << hexTreeNodeType(node->type) << ", content: \"" << content << "\"";
+  }
+
+  if (node->name) {
+    debug << ", name: \"";
+    Utils::logNodeName(debug, node->name);
+    debug << "\"";
+  }
+  debug << "\n";
+  debug.space();
+
+  WBXMLTreeNode *children = node->children;
+  while (children) {
+    logNode(debug, children, level + 1);
+
+    children = children->next;
+  }
+
+  return debug;
 }

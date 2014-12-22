@@ -25,11 +25,20 @@
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 
+#include <QtCore/qstring.h>
+#include <QtCore/qdebug.h>
+
+typedef struct WBXMLTag_s WBXMLTag;
+typedef struct WBXMLTreeNode_s WBXMLTreeNode;
+typedef struct WBXMLAttributeName_s WBXMLAttributeName;
 class Utils
 {
 public:
   static void hexDump(const char *pData);
   static void hexDump(const unsigned char *pData, int length);
+  static QString hexTreeNodeType(int treeNodeType);
+  static QDebug logNodeName(QDebug debug, WBXMLTag *nodeName);
+  static QDebug logNode(QDebug debug, WBXMLTreeNode *node, int level = 0);
 };
 
 #endif /* TEST_UTILS_H */

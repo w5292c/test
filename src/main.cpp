@@ -53,17 +53,8 @@ int main(int argc, char **argv)
   QCoreApplication app(argc, argv);
 
   TestBase test;
-  test.setValue(123);
-  qDebug() << "main: " << test.getValue();
 
-  TheMap.insert(0, "This is the first element");
-  TheMap.insert(1, "This one is to be updated");
-  TheMap.insert(9, "Some more information is here, 9th element");
-  TheMap.insert(5, "Some element in the middle");
-  TheMap.insert(4, "The 4th element");
-  TheMap.insert(1, "Here is the 1st updated element");
-  qDebug() << "Here is the map:" << TheMap;
-
+#if 0 // Base64 encoding test
   const WB_UTINY TheData[] = {
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
@@ -72,13 +63,14 @@ int main(int argc, char **argv)
   qDebug() << "Encoded: " << (const char *)encoded;
 
   wbxml_free (encoded);
+#endif // Base64 encoding test
 
   WB_UTINY xmlBlock[] =
-    "<?xml version=\"1.0\"?>\n"
-    "<!DOCTYPE AirSync PUBLIC \"-//AIRSYNC//DTD AirSync//EN\" \"http://www.microsoft.com/\">\n"
-    "<FolderSync xmlns=\"http://synce.org/formats/airsync_wm5/airsync\">\n"
-    "  <SyncKey>0</SyncKey>\n"
-    "</FolderSync>\n";
+    "<?xml version=\"1.0\"?>"
+    "<!DOCTYPE AirSync PUBLIC \"-//AIRSYNC//DTD AirSync//EN\" \"http://www.microsoft.com/\">"
+    "<FolderSync xmlns=\"http://synce.org/formats/airsync_wm5/airsync\">"
+    "<SyncKey>0</SyncKey>"
+    "</FolderSync>";
 
   WBXMLGenWBXMLParams gparams;
   gparams.wbxml_version = WBXML_VERSION_13;
@@ -96,6 +88,14 @@ int main(int argc, char **argv)
   qDebug() << "BWXml result: " << (const char *)wbxml_errors_string (result) << ", block: " << wbxml << ", Length: " << wbxml_len;
   qDebug() << "XML Data:" << (const char *)xmlBlock << ", Land ID: " << WBXML_LANG_AIRSYNC;
   Utils::hexDump(wbxml, wbxml_len);
+  qDebug() << "********************************************************************************************";
+  WBXMLTree *wbxml_tree = NULL;
+  const WBXMLError treeRes = wbxml_tree_from_xml(xmlBlock, strlen ((const char *)xmlBlock), &wbxml_tree);
+  qDebug() << "Converted to a tree, result: " << (const char *)wbxml_errors_string(treeRes) << ", " << wbxml_tree;
+  qDebug() << "Charset: " << wbxml_tree->orig_charset << ", codePage: " << wbxml_tree->cur_code_page;
+  WBXMLTreeNode *item = wbxml_tree->root;
+  Utils::logNode(qDebug(), item);
+
   qDebug() << "********************************************************************************************";
   /* Example from [MS-ASWBXML].pdf */
   WB_UTINY testWbxml[] = {

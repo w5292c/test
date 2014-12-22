@@ -29,6 +29,7 @@
 #include <QNetworkReply>
 #include <QAuthenticator>
 #include <QNetworkRequest>
+#include <QCoreApplication>
 #include <QProcessEnvironment>
 
 /*!
@@ -62,7 +63,7 @@ TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone), m_reply(NULL)
   connect(this, SIGNAL(testignal(IndexId)), this, SLOT(start(IndexId)));
 
   m_timer.setSingleShot(false);
-  m_timer.setInterval(2000);
+  m_timer.setInterval(200);
   connect(&m_timer, SIGNAL(timeout()), this, SLOT(onTimer()));
   m_timer.start();
 
@@ -105,6 +106,7 @@ void TestBase::onTimer()
 
   if (IndexIdLast == m_index) {
     m_index = IndexIdNone;
+    QCoreApplication::exit();
   } else {
     ++m_index;
   }
