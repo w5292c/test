@@ -27,6 +27,7 @@
 #include "utils.h"
 
 #include <QDebug>
+#include <wbxml.h>
 #include <QBuffer>
 #include <QMetaEnum>
 #include <QNetworkReply>
@@ -199,6 +200,13 @@ void TestBase::onFolderSyncReady()
   Utils::hexDump((const unsigned char *)bytes.data(), bytes.size());
   qDebug() << bytes;
 
+  WBXMLTree *pTree = NULL;
+  const WBXMLError wbxmlError = wbxml_tree_from_wbxml((unsigned char *)bytes.data(), bytes.size(), WBXML_LANG_AIRSYNC, &pTree);
+  qDebug() << "[TestBase::onFolderSyncReady]: WBXML result: " << (const char *)wbxml_errors_string(wbxmlError);
+  Utils::logNode(qDebug(), pTree->root);
+
+  // Clean-up
+  wbxml_tree_destroy(pTree);
   delete m_reply;
   m_reply = NULL;
 }
