@@ -48,10 +48,12 @@ void Utils::hexDump(const unsigned char *pData, int length)
     char lowByte = (0xFU&byte) + '0';
     char highByte = (0xFU&(byte>>4)) + '0';
     if (lowByte > '9') {
-      lowByte += 'A' - '9';
+      // 0x0A => 'A', etc...
+      lowByte += 'A' - ('9' + 1);
     }
     if (highByte > '9') {
-      highByte += 'A' - '9';
+      // 0x0A => 'A', etc...
+      highByte += 'A' - ('9' + 1);
     }
     if (byte < 32) {
       byte = '.';
