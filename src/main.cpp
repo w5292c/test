@@ -126,13 +126,56 @@ int main(int argc, char **argv)
     testWbxml, sizeof (testWbxml),
     &pXml, &xml_len,
     &params);
-  qDebug() << "XML: result: " << (const char *)wbxml_errors_string (wbres) << ", XML length: " << xml_len;
+  qDebug() << "XML: result: " << (const char *)wbxml_errors_string(wbres) << ", XML length: " << xml_len;
   qDebug() << (const char *)pXml;
 
   qDebug() << "********************************************************************************************";
   WBXMLTree *resTree = NULL;
   const WBXMLError lastRes = wbxml_tree_from_wbxml(testWbxml, sizeof (testWbxml), WBXML_LANG_AIRSYNC, &resTree);
+  qDebug() << "Tree from WBXML result: " << (const char *)wbxml_errors_string(lastRes);
   Utils::logNode(qDebug(), resTree->root);
+  qDebug() << "********************************************************************************************";
+  // Manually creating WBXML tree for SyncFolder ActiveSync command.
+  // Tree node type: "WBXML_TREE_ELEMENT_NODE", name: "[WBXML_VALUE_TOKEN: ENTRY: "FolderSync", PAGE: 7, TOKEN: 22]"
+  //    Tree node type: "WBXML_TREE_ELEMENT_NODE", name: "[WBXML_VALUE_TOKEN: ENTRY: "SyncKey", PAGE: 0, TOKEN: 11]"
+  //      Tree node type: "WBXML_TREE_TEXT_NODE", content: "0"
+
+  // Create the tree object
+  WBXMLTree *createdTree = wbxml_tree_create(WBXML_LANG_AIRSYNC, WBXML_CHARSET_UTF_8);
+  WBXMLTreeNode *folderSyncNode = wbxml_tree_node_create(WBXML_TREE_ELEMENT_NODE);
+  WBXMLTreeNode *syncKeyNode = wbxml_tree_node_create(WBXML_TREE_ELEMENT_NODE);
+
+  // Creare/prepare the value TREE-NODE:
+  WBXMLTreeNode *const keyNode = wbxml_tree_node_create_text((const unsigned char *)("0"), 1);
+
+  // Create the 'SyncKey' TREE-TAG
+  WBXMLTagEntry tagEntry;
+  tagEntry.xmlName = NULL;
+  tagEntry.wbxmlCodePage = 0;
+  tagEntry.wbxmlToken = 11;
+  syncKeyNode->name = wbxml_tag_create_token(&tagEntry);
+  // Create the 'FolderSync' tag
+  WBXMLTagEntry tagEntry1;
+  tagEntry1.xmlName = NULL;
+  tagEntry1.wbxmlCodePage = 7;
+  tagEntry1.wbxmlToken = 22;
+  folderSyncNode->name = wbxml_tag_create_token(&tagEntry1);
+
+  // Configure links
+  createdTree->root = folderSyncNode;
+  folderSyncNode->children = syncKeyNode;
+  syncKeyNode->parent = folderSyncNode;
+  syncKeyNode->children = keyNode;
+  keyNode->parent = syncKeyNode;
+
+  qDebug() << "Created tree:";
+  Utils::logNode(qDebug(), createdTree->root);
+  WB_UTINY *createdWbxml = NULL;
+  WB_ULONG  createdWbxmlLen = 0;
+  const WBXMLError createdWbxmlResult = wbxml_tree_to_wbxml(createdTree, &createdWbxml, &createdWbxmlLen, &gparams);
+  qDebug() << "Result: " << (const char *)wbxml_errors_string(createdWbxmlResult) << ", length: " << createdWbxmlLen;
+  Utils::hexDump(createdWbxml, createdWbxmlLen);
+
   qDebug() << "********************************************************************************************";
 
   return app.exec();
