@@ -24,7 +24,10 @@
 
 #include "testbase.h"
 
+#include "utils.h"
+
 #include <QDebug>
+#include <QBuffer>
 #include <QMetaEnum>
 #include <QNetworkReply>
 #include <QAuthenticator>
@@ -53,6 +56,7 @@
 namespace {
 const char *const PROTOCOL_VERSIONS_HEADER = "MS-ASProtocolVersions";
 const char *const PROTOCOL_COMMANDS_HEADER = "MS-ASProtocolCommands";
+const QLatin1String folderSyncSuffix("/Microsoft-Server-ActiveSync?Cmd=FolderSync&User=fakeuser&DeviceId=v140Device&DeviceType=SmartPhone");
 }
 
 /*!
@@ -144,11 +148,12 @@ void TestBase::sendRequest()
 
 void TestBase::onRequestReady(QNetworkReply *reply)
 {
-  Q_UNUSED(reply);
 #if 0
   // This code works as well, but we will log the results in 'TestBase::onOptionsRequestReady'
   qDebug() << "[TestBase::onRequestReady] MS-ASProtocolVersions:" << reply->rawHeader(PROTOCOL_VERSIONS_HEADER);
   qDebug() << "[TestBase::onRequestReady] MS-ASProtocolCommands:" << reply->rawHeader(PROTOCOL_COMMANDS_HEADER);
+#else
+  qDebug() << "[TestBase::onRequestReady]: reply: " << reply;
 #endif
 }
 
@@ -156,6 +161,44 @@ void TestBase::onOptionsRequestReady()
 {
   qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolVersions:" << m_reply->rawHeader(PROTOCOL_VERSIONS_HEADER);
   qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolCommands:" << m_reply->rawHeader(PROTOCOL_COMMANDS_HEADER);
+  delete m_reply;
+  m_reply = NULL;
+
+  sendFolderSyncRequest();
+}
+
+void TestBase::sendFolderSyncRequest()
+{
+  const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
+  const QString &serverAddress = env.value("MY_ADDR", "exchange-server.com");
+  const QString &serverPort = env.value("MY_PORT", "443");
+  const QUrl &serverUrl = QUrl(QLatin1String("https://") + serverAddress + ":" + serverPort + folderSyncSuffix);
+  qDebug() << "[TestBase::sendFolderSyncRequest] URL: " << serverUrl;
+
+  static const char TheData[] = {
+    0x03, 0x01, 0x6A, 0x00, 0x00, 0x07, 0x56, 0x52,
+    0x03, 0x30, 0x00, 0x01, 0x01
+  };
+  static QBuffer buffer;
+  buffer.setData(TheData, sizeof (TheData));
+  if (!m_reply) {
+    QNetworkRequest request(serverUrl);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/vnd.ms-sync.wbxml");
+    request.setRawHeader("MS-ASProtocolVersion", "14.1");
+    request.setRawHeader("User-Agent", "ASOM");
+    request.setRawHeader("Host", serverAddress.toLatin1());
+    m_reply = m_manager.post(request, &buffer);
+    connect(m_reply, SIGNAL(finished()), this, SLOT(onFolderSyncReady()));
+  }
+}
+
+void TestBase::onFolderSyncReady()
+{
+  qDebug() << "[TestBase::onFolderSyncReady]: headers: " << m_reply->rawHeaderPairs();
+  const QByteArray &bytes = m_reply->readAll();
+  Utils::hexDump((const unsigned char *)bytes.data(), bytes.size());
+  qDebug() << bytes;
+
   delete m_reply;
   m_reply = NULL;
 }

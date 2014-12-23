@@ -61,6 +61,7 @@ public:
 
 public slots:
   void onTimer();
+  void onFolderSyncReady();
   void start(IndexId indexId);
   void onOptionsRequestReady();
   void onRequestReady(QNetworkReply *reply);
@@ -71,6 +72,7 @@ Q_SIGNALS:
 
 private:
   void sendRequest();
+  void sendFolderSyncRequest();
 
 private:
   int m_value;
