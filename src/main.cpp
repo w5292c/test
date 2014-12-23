@@ -151,8 +151,8 @@ int main(int argc, char **argv)
   // Create the 'SyncKey' TREE-TAG
   WBXMLTagEntry tagEntry;
   tagEntry.xmlName = NULL;
-  tagEntry.wbxmlCodePage = 0;
-  tagEntry.wbxmlToken = 11;
+  tagEntry.wbxmlCodePage = 7;
+  tagEntry.wbxmlToken = 18;
   syncKeyNode->name = wbxml_tag_create_token(&tagEntry);
   // Create the 'FolderSync' tag
   WBXMLTagEntry tagEntry1;
