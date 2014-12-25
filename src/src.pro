@@ -2,7 +2,7 @@ TEMPLATE = app
 TARGET = $$OUT_PWD/test
 
 CONFIG += link_pkgconfig
-PKGCONFIG += libwbxml2
+PKGCONFIG += libwbxml2 accounts-qt5
 QT += network
 QT -= gui
 

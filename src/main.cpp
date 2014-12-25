@@ -177,6 +177,7 @@ int main(int argc, char **argv)
   Utils::hexDump(createdWbxml, createdWbxmlLen);
 
   qDebug() << "********************************************************************************************";
+  Utils::registerAccount();
 
   return app.exec();
 }

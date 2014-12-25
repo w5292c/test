@@ -27,6 +27,34 @@
 #include <QDebug>
 #include <wbxml.h>
 #include <string.h>
+#include <Accounts/Account>
+#include <Accounts/Manager>
+#include <QProcessEnvironment>
+
+static const QLatin1String ACTIVESYNC_PROVIDER_NAME("activesync");
+
+void Utils::registerAccount()
+{
+  Accounts::Manager manager;
+  Accounts::Account *account = manager.account(1);
+  if (!account) {
+    account = manager.createAccount(ACTIVESYNC_PROVIDER_NAME);
+  }
+  account->setEnabled(true);
+  account->setDisplayName("Main AS Account");
+  const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
+  const QString &userId = env.value("MY_USER", "<user>");
+  const QString &serverAddress = env.value("MY_ADDR", "exchange-server.com");
+  const QString &serverPort = env.value("MY_PORT", "443");
+//  const QString &passwd = env.value("MY_PASS", "<password>");
+  account->setValue("default_credentials_username", userId);
+  account->beginGroup("connection");
+  account->setValue("exchange_server", serverAddress + serverPort);
+  account->endGroup();
+
+  account->sync();
+  qDebug() << "[Utils::registerAccount]: account, ID: " << account->id();
+}
 
 void Utils::hexDump(const char *pData)
 {

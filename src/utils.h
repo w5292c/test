@@ -34,6 +34,7 @@ typedef struct WBXMLAttributeName_s WBXMLAttributeName;
 class Utils
 {
 public:
+  static void registerAccount();
   static void hexDump(const char *pData);
   static void hexDump(const unsigned char *pData, int length);
   static QString hexTreeNodeType(int treeNodeType);
