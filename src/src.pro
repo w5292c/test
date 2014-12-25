@@ -4,6 +4,7 @@ TARGET = $$OUT_PWD/test
 CONFIG += link_pkgconfig
 PKGCONFIG += libwbxml2
 QT += network
+QT -= gui
 
 INCLUDEPATH += .
 
