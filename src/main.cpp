@@ -52,6 +52,12 @@ int main(int argc, char **argv)
 {
   QCoreApplication app(argc, argv);
 
+  if (2 == argc && !strcmp(argv[1], "reg")) {
+    Utils::registerAccount();
+    qDebug() << "MAIN: registration done.";
+    return 0;
+  }
+
   TestBase test;
 
 #if 0 // Base64 encoding test
@@ -177,7 +183,6 @@ int main(int argc, char **argv)
   Utils::hexDump(createdWbxml, createdWbxmlLen);
 
   qDebug() << "********************************************************************************************";
-  Utils::registerAccount();
 
   return app.exec();
 }

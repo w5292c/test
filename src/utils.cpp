@@ -27,18 +27,24 @@
 #include <QDebug>
 #include <wbxml.h>
 #include <string.h>
+#include <SignOn/Identity>
 #include <Accounts/Account>
 #include <Accounts/Manager>
 #include <QProcessEnvironment>
 
-static const QLatin1String ACTIVESYNC_PROVIDER_NAME("activesync");
+namespace {
+const QLatin1String SsoMethod("auth/method");
+const QLatin1String AsProviderName("activesync");
+const QLatin1String AccountCredId("CredentialsId");
+const QLatin1String NwSecureConnection("connection/secure_connection");
+}
 
 void Utils::registerAccount()
 {
   Accounts::Manager manager;
   Accounts::Account *account = manager.account(1);
   if (!account) {
-    account = manager.createAccount(ACTIVESYNC_PROVIDER_NAME);
+    account = manager.createAccount(AsProviderName);
   }
   account->setEnabled(true);
   account->setDisplayName("Main AS Account");
@@ -46,13 +52,28 @@ void Utils::registerAccount()
   const QString &userId = env.value("MY_USER", "<user>");
   const QString &serverAddress = env.value("MY_ADDR", "exchange-server.com");
   const QString &serverPort = env.value("MY_PORT", "443");
-//  const QString &passwd = env.value("MY_PASS", "<password>");
   account->setValue("default_credentials_username", userId);
   account->beginGroup("connection");
   account->setValue("exchange_server", serverAddress + serverPort);
   account->endGroup();
+  account->setValue(SsoMethod, "password");
+  account->setValue(AccountCredId, "1");
+  account->setValue(NwSecureConnection, true);
 
   account->sync();
+
+  // SignOn handling
+  const QString &passwd = env.value("MY_PASS", "<password>");
+  SignOn::IdentityInfo identityInfo;
+  identityInfo.setUserName(userId);
+  identityInfo.setSecret(passwd, true);
+  SignOn::Identity *const identity = SignOn::Identity::newIdentity(identityInfo);
+  if (!identity) {
+    qDebug() << "[Utils::registerAccount] Cannot create 'identity'";
+  } else {
+    identity->storeCredentials();
+  }
+
   qDebug() << "[Utils::registerAccount]: account, ID: " << account->id();
 }
 
