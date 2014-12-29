@@ -36,6 +36,8 @@ namespace {
 const QLatin1String SsoMethod("auth/method");
 const QLatin1String AsProviderName("activesync");
 const QLatin1String AccountCredId("CredentialsId");
+const QLatin1String ExchangeServerPort("connection/port");
+const QLatin1String ExchangeServerHost("connection/exchange_server");
 const QLatin1String NwSecureConnection("connection/secure_connection");
 }
 
@@ -54,7 +56,8 @@ void Utils::registerAccount()
   const QString &serverPort = env.value("MY_PORT", "443");
   account->setValue("default_credentials_username", userId);
   account->beginGroup("connection");
-  account->setValue("exchange_server", serverAddress + serverPort);
+  account->setValue("exchange_server", serverAddress);
+  account->setValue("port", serverPort);
   account->endGroup();
   account->setValue(SsoMethod, "password");
   account->setValue(AccountCredId, "1");
