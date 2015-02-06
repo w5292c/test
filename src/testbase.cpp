@@ -65,6 +65,12 @@ const QLatin1String folderSyncSuffix("/Microsoft-Server-ActiveSync?Cmd=FolderSyn
 */
 TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone), m_reply(NULL)
 {
+  mTags.push(0x1020);
+  mTags.push(0x2030);
+  mTags.push(0x3040);
+  mTags.push(0x4050);
+  mTags.push(0x5061);
+
   connect(this, SIGNAL(testignal(IndexId)), this, SLOT(start(IndexId)));
 
   m_timer.setSingleShot(false);
@@ -103,6 +109,26 @@ int TestBase::getValue() const
 void TestBase::setValue(int newValue)
 {
   m_value = newValue;
+}
+
+bool TestBase::check(int length, ...) const
+{
+  bool result = (length == mTags.length());
+
+  va_list vl;
+  va_start(vl, length);
+  if (result) {
+    for (int i = 0; i < length; ++i) {
+      const uint tagId = va_arg(vl, uint);
+      if (tagId != mTags[i]) {
+        result = false;
+        break;
+      }
+    }
+  }
+
+  va_end(vl);
+  return result;
 }
 
 void TestBase::onTimer()
@@ -160,7 +186,10 @@ void TestBase::onRequestReady(QNetworkReply *reply)
 
 void TestBase::onOptionsRequestReady()
 {
-  qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolVersions:" << m_reply->rawHeader(PROTOCOL_VERSIONS_HEADER);
+  qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolVersions:" << m_reply->rawHeader(PROTOCOL_VERSIONS_HEADER).split(',');
+  QByteArray emptyBytes = "14.1";
+  QList<QByteArray> emptyResult = emptyBytes.split(',');
+  qDebug() << "[TestBase::onOptionsRequestReady] empty:" << emptyResult.size() << ", " << emptyResult;
   qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolCommands:" << m_reply->rawHeader(PROTOCOL_COMMANDS_HEADER);
   delete m_reply;
   m_reply = NULL;

@@ -25,6 +25,7 @@
 #ifndef TEST_BASE_H
 #define TEST_BASE_H
 
+#include <QStack>
 #include <QTimer>
 #include <QNetworkAccessManager>
 #include <QtCore/qmetaobject.h>
@@ -36,6 +37,9 @@ inline QDebug operator<<(QDebug dbg, Class::Enum value) { \
   dbg.nospace() << #Class << "::" << TestBase::staticMetaObject.enumerator(index).valueToKey(value); \
   return dbg.space(); \
 }
+
+#define TEST_COUNT_ARGS(...)  (sizeof((int[]){__VA_ARGS__})/sizeof (int))
+#define checkTags(...) check(TEST_COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
 
 class TestBase : public QObject
 {
@@ -58,6 +62,7 @@ public:
 
   int getValue() const;
   void setValue(int newValue);
+  bool check(int length, ...) const;
 
 public slots:
   void onTimer();
@@ -78,6 +83,7 @@ private:
   int m_value;
   int m_index;
   QTimer m_timer;
+  QStack<uint> mTags;
   QNetworkReply *m_reply;
   QNetworkAccessManager m_manager;
 };

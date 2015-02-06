@@ -59,6 +59,11 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "iconv")) {
     Utils::iconvTest();
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "check-test")) {
+    TestBase testBase;
+    qDebug() << "MAIN result (expected: false): " << testBase.checkTags(0x1020u, 0x2030u, 0x3040, 0x4051, 0x5061);
+    qDebug() << "MAIN result (expected:  true): " << testBase.checkTags(0x1020u, 0x2030u, 0x3040, 0x4050, 0x5061);
+    return 0;
   }
 
   TestBase test;
