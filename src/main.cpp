@@ -56,6 +56,9 @@ int main(int argc, char **argv)
     Utils::registerAccount();
     qDebug() << "MAIN: registration done.";
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "iconv")) {
+    Utils::iconvTest();
+    return 0;
   }
 
   TestBase test;

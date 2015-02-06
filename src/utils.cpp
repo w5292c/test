@@ -24,6 +24,7 @@
 
 #include "utils.h"
 
+#include <glib.h>
 #include <QDebug>
 #include <wbxml.h>
 #include <string.h>
@@ -206,4 +207,9 @@ QDebug Utils::logNode(QDebug debug, WBXMLTreeNode *node, int level)
   }
 
   return debug;
+}
+
+void Utils::iconvTest()
+{
+  GIConv conv = g_iconv_open("utf-8", "ISO8859-1");
 }
