@@ -211,5 +211,21 @@ QDebug Utils::logNode(QDebug debug, WBXMLTreeNode *node, int level)
 
 void Utils::iconvTest()
 {
-  GIConv conv = g_iconv_open("utf-8", "ISO8859-1");
+  GError *error = NULL;
+  gsize bytes_read = 0;
+  gsize bytes_written = 0;
+  gchar *const result = g_convert(
+    // Data to be converted
+    "Str: \xF4", -1,
+    // TO <= FROM
+    "utf-8", "ISO8859-1",
+    &bytes_read, &bytes_written, &error);
+  QByteArray outBuffer;
+  outBuffer.append(result, bytes_written);
+  const QString &resultString = QString::fromUtf8(outBuffer);
+
+  qDebug() << "Utils::iconvTest, Result: " << resultString
+           << ", bytes read: " << bytes_read << ", bytes_written: " << bytes_written
+           << ", error: " << error;
+  Utils::hexDump(outBuffer);
 }
