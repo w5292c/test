@@ -15,9 +15,11 @@ INCLUDEPATH += .
 
 HEADERS += \
   utils.h \
-  testbase.h
+  testbase.h \
+  another.h
 
 SOURCES += \
   main.cpp \
   utils.cpp \
-  testbase.cpp
+  testbase.cpp \
+  another.cpp
