@@ -70,6 +70,8 @@ int main(int argc, char **argv)
     qDebug() << "ISO     Date: " << dateTime.toString(Qt::ISODate);
     qDebug() << "RFC2822 Date: " << dateTime.toString(Qt::RFC2822Date);
     qDebug() << "Custom  Date: " << dateTime.toString("yyyy-MM-ddTHH:mm:ss.zzzZ");
+    const QDateTime &parsed = QDateTime::fromString("2016-06-21T21:20:31.235Z", Qt::ISODate);
+    qDebug() << "Parsed: " << parsed;
     return 0;
   }
 
