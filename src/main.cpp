@@ -32,6 +32,7 @@
 #include <string.h>
 #include <wbxml_conv.h>
 
+#include <QDateTime>
 #include <QCoreApplication>
 
 /*!
@@ -63,6 +64,12 @@ int main(int argc, char **argv)
     TestBase testBase;
     qDebug() << "MAIN result (expected: false): " << testBase.checkTags(0x1020u, 0x2030u, 0x3040, 0x4051, 0x5061);
     qDebug() << "MAIN result (expected:  true): " << testBase.checkTags(0x1020u, 0x2030u, 0x3040, 0x4050, 0x5061);
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "time")) {
+    QDateTime dateTime(QDateTime(QDate(2015, 2, 15), QTime(10, 33, 50, 775), Qt::UTC));
+    qDebug() << "ISO     Date: " << dateTime.toString(Qt::ISODate);
+    qDebug() << "RFC2822 Date: " << dateTime.toString(Qt::RFC2822Date);
+    qDebug() << "Custom  Date: " << dateTime.toString("yyyy-MM-ddTHH:mm:ss.zzzZ");
     return 0;
   }
 
