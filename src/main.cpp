@@ -73,6 +73,9 @@ int main(int argc, char **argv)
     const QDateTime &parsed = QDateTime::fromString("2016-06-21T21:20:31.235Z", Qt::ISODate);
     qDebug() << "Parsed: " << parsed;
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "text")) {
+    Utils::testTextCodec();
+    return 0;
   }
 
   TestBase test;

@@ -35,6 +35,7 @@ class Utils
 {
 public:
   static void iconvTest();
+  static void testTextCodec();
   static void registerAccount();
   static void hexDump(const char *pData);
   static void hexDump(const unsigned char *pData, int length);

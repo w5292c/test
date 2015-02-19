@@ -28,6 +28,7 @@
 #include <QDebug>
 #include <wbxml.h>
 #include <string.h>
+#include <QTextCodec>
 #include <SignOn/Identity>
 #include <Accounts/Account>
 #include <Accounts/Manager>
@@ -228,4 +229,10 @@ void Utils::iconvTest()
            << ", bytes read: " << bytes_read << ", bytes_written: " << bytes_written
            << ", error: " << error;
   Utils::hexDump(outBuffer);
+}
+
+void Utils::testTextCodec()
+{
+  const QList<QByteArray> &availableCodecs = QTextCodec::availableCodecs();
+  qDebug() << availableCodecs;
 }
