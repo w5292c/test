@@ -64,6 +64,7 @@ void Utils::registerAccount()
   account->setValue(SsoMethod, "password");
   account->setValue(AccountCredId, "1");
   account->setValue(NwSecureConnection, true);
+  account->setValue("sync/mail", true);
 
   account->sync();
 
