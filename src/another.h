@@ -29,6 +29,7 @@
 
 class QVariant;
 
+void test();
 QMap<uint, QVariant> testX();
 
 #endif // TEST_ANOTHER_H

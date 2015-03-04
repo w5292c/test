@@ -24,6 +24,7 @@
 
 #include "another.h"
 
+#include <QDebug>
 #include <QVariant>
 
 static QMap<uint, QVariant> TheMap;
@@ -31,4 +32,8 @@ static QMap<uint, QVariant> TheMap;
 QMap<uint, QVariant> testX()
 {
   return TheMap;
+}
+
+void test()
+{
 }

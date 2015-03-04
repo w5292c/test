@@ -25,6 +25,7 @@
 #include "testbase.h"
 
 #include "utils.h"
+#include "another.h"
 
 #include <QMap>
 #include <QDebug>
@@ -75,6 +76,9 @@ int main(int argc, char **argv)
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "text")) {
     Utils::testTextCodec();
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "test")) {
+    test();
     return 0;
   }
 
