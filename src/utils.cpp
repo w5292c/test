@@ -71,13 +71,20 @@ void Utils::registerAccount()
   // SignOn handling
   const QString &passwd = env.value("MY_PASS", "<password>");
   SignOn::IdentityInfo identityInfo;
+  identityInfo.setId(1);
   identityInfo.setUserName(userId);
   identityInfo.setSecret(passwd, true);
-  SignOn::Identity *const identity = SignOn::Identity::newIdentity(identityInfo);
+  identityInfo.setStoreSecret(true);
+  SignOn::Identity *identity = SignOn::Identity::existingIdentity(1);
+  if (!identity) {
+    qWarning() << "New identity";
+    identity = SignOn::Identity::newIdentity(identityInfo);
+  }
+
   if (!identity) {
     qDebug() << "[Utils::registerAccount] Cannot create 'identity'";
   } else {
-    identity->storeCredentials();
+    identity->storeCredentials(identityInfo);
   }
 
   qDebug() << "[Utils::registerAccount]: account, ID: " << account->id();
