@@ -80,6 +80,9 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "test")) {
     test();
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "wbxml")) {
+    Utils::wbxmlTest();
+    return 0;
   }
 
   TestBase test;

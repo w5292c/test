@@ -34,6 +34,7 @@ typedef struct WBXMLAttributeName_s WBXMLAttributeName;
 class Utils
 {
 public:
+  static void wbxmlTest();
   static void iconvTest();
   static void testTextCodec();
   static void registerAccount();

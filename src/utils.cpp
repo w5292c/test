@@ -244,3 +244,37 @@ void Utils::testTextCodec()
   const QList<QByteArray> &availableCodecs = QTextCodec::availableCodecs();
   qDebug() << availableCodecs;
 }
+
+const char *const wbxmlHexData =
+"03016a00 0007564c 03310001 52033100 014e5703 31310001 4f480331 00014903 30000147 0343616c "
+"656e6461 7200014a 03380001 014f4803 32000149 03300001 4703436f 6e746163 74730001 4a033900 "
+"01014f48 03330001 49033000 01470344 656c6574 65642049 74656d73 00014a03 34000101 4f480334 "
+"00014903 30000147 03447261 66747300 014a0333 0001014f 48033500 01490330 00014703 496e626f "
+"7800014a 03320001 014f4803 36000149 03300001 47034a6f 75726e61 6c00014a 03313100 01014f48 "
+"03370001 49033000 0147034a 756e6b20 456d6169 6c00014a 03313200 01014f48 03380001 49033000 "
+"0147034e 6f746573 00014a03 31300001 014f4803 39000149 03300001 47034f75 74626f78 00014a03 "
+"36000101 4f480331 30000149 03300001 47035365 6e742049 74656d73 00014a03 35000101 4f480331 "
+"31000149 03300001 47035461 736b7300 014a0337 00010101 01";
+
+void Utils::wbxmlTest()
+{
+  const QByteArray &data = QByteArray::fromHex(wbxmlHexData);
+
+  // Create the WBXML tree
+  WBXMLTree *tree = NULL;
+  WBXMLError result = wbxml_tree_from_wbxml((WB_UTINY *)data.constData(),
+                                            data.length(), WBXML_LANG_AIRSYNC, &tree);
+  Q_ASSERT(result == WBXML_OK);
+  WB_UTINY *xml = NULL;
+  WB_ULONG xml_len = 0;
+  WBXMLGenXMLParams params;
+  params.gen_type = WBXML_GEN_XML_INDENT;
+  params.lang = WBXML_LANG_AIRSYNC;
+  params.indent = 2;
+  params.keep_ignorable_ws = TRUE;
+  // Encode the WBXML tree in XML format
+  result = wbxml_tree_to_xml(tree, &xml, &xml_len, &params);
+  Q_ASSERT(result == WBXML_OK);
+  Q_UNUSED(result);
+  qDebug() << "Length: " << xml_len << "Data:\r\n" << (const char *)xml;
+}
