@@ -26,7 +26,9 @@
 
 #include "utils.h"
 #include "another.h"
+#include "calendar.h"
 
+#include <QDir>
 #include <QMap>
 #include <QDebug>
 #include <wbxml.h>
@@ -82,6 +84,10 @@ int main(int argc, char **argv)
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "wbxml")) {
     Utils::wbxmlTest();
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "cal")) {
+    qDebug() << "Home:" << QDir::home().path();
+//    CalendarTest::test();
     return 0;
   }
 
