@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "cal")) {
     qDebug() << "Home:" << QDir::home().path();
-//    CalendarTest::test();
+    CalendarTest::test();
     return 0;
   }
 
