@@ -111,6 +111,10 @@ void TestBase::setValue(int newValue)
   m_value = newValue;
 }
 
+/*!
+ * \brief TestBase::check Args checks with \a length number of arguments
+ * \param length The number of arguments to be parsed
+ */
 bool TestBase::check(int length, ...) const
 {
   bool result = (length == mTags.length());
