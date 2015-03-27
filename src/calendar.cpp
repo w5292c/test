@@ -3,7 +3,7 @@
 #include <uuid.h>
 
 #include <QDebug>
-#include <calformat.h>
+#include <icalformat.h>
 #include <icaltimezones.h>
 #include <extendedstorage.h>
 #include <extendedcalendar.h>
@@ -36,6 +36,12 @@ void CalendarTest::test()
 
   qDebug() << "ICAL 1:" << timezone1.vtimezone();
   qDebug() << "ICAL 2:" << timezone2.vtimezone();
+
+  const Incidence::Ptr event(new Event());
+
+  ICalFormat format;
+  const QString &encoded = format.toICalString(event);
+  qDebug() << "Encoded:[" << encoded << "]";
 }
 
 MSTimeZone createTimezone()
