@@ -278,3 +278,15 @@ void Utils::wbxmlTest()
   Q_UNUSED(result);
   qDebug() << "Length: " << xml_len << "Data:\r\n" << (const char *)xml;
 }
+
+uint Utils::getUint32(const QByteArray &buffer, uint startIndex)
+{
+    int i = 0;
+    uint result = 0;
+    const uint length = buffer.length();
+    while (length > startIndex + i && i < 4) {
+        result = result | ((static_cast<uint>(buffer[startIndex + i])) << (8*i)); ++i;
+    }
+
+    return result;
+}

@@ -43,6 +43,7 @@ public:
   static QString hexTreeNodeType(int treeNodeType);
   static QDebug logNodeName(QDebug debug, WBXMLTag *nodeName);
   static QDebug logNode(QDebug debug, WBXMLTreeNode *node, int level = 0);
+  static uint getUint32(const QByteArray &buffer, uint startIndex);
 };
 
 #endif /* TEST_UTILS_H */

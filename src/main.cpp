@@ -85,6 +85,20 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "wbxml")) {
     Utils::wbxmlTest();
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "endian")) {
+    QByteArray buffer;
+    buffer.append("\x00\x01\x02\x03\x04\x05", 6);
+
+    qCritical() << "Length:" << buffer.length();
+    qCritical() << "0:" << QByteArray::number(Utils::getUint32(buffer, 0), 16);
+    qCritical() << "1:" << QByteArray::number(Utils::getUint32(buffer, 1), 16);
+    qCritical() << "2:" << QByteArray::number(Utils::getUint32(buffer, 2), 16);
+    qCritical() << "3:" << QByteArray::number(Utils::getUint32(buffer, 3), 16);
+    qCritical() << "4:" << QByteArray::number(Utils::getUint32(buffer, 4), 16);
+    qCritical() << "5:" << QByteArray::number(Utils::getUint32(buffer, 5), 16);
+    qCritical() << "6:" << QByteArray::number(Utils::getUint32(buffer, 6), 16);
+    qCritical() << "7:" << QByteArray::number(Utils::getUint32(buffer, 7), 16);
+    return 0;
   } else if (2 == argc && !strcmp(argv[1], "cal")) {
     qDebug() << "Home:" << QDir::home().path();
     CalendarTest::test();
