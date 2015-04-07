@@ -9,7 +9,8 @@ PKGCONFIG += \
   glib-2.0 \
   libmkcal-qt5 \
   libkcalcoren-qt5 \
-  uuid
+  uuid \
+  libical
 
 QT += network
 QT -= gui
