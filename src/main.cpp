@@ -103,7 +103,11 @@ int main(int argc, char **argv)
     qDebug() << "Home:" << QDir::home().path();
     CalendarTest::test();
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "rule")) {
+    CalendarTest::testRule();
+    return 0;
   }
+
 
   TestBase test;
 

@@ -14,7 +14,7 @@ using namespace mKCal;
 using namespace KCalCore;
 
 static MSTimeZone createTimezone();
-static ICalTimeZone myparse(const MSTimeZone *tz);
+//static ICalTimeZone myparse(const MSTimeZone *tz);
 
 class MyTimeZoneData : public ICalTimeZoneData
 {
@@ -229,3 +229,8 @@ ICalTimeZone MyTimeZoneData::myparse(const MSTimeZone *tz)
   return ICalTimeZone( *this, name, idata );
 }
 #endif
+
+void CalendarTest::testRule()
+{
+  qDebug() << "Testing rules";
+}
