@@ -27,6 +27,7 @@
 #include "utils.h"
 #include "another.h"
 #include "calendar.h"
+#include "bintoold.h"
 
 #include <QDir>
 #include <QMap>
@@ -105,6 +106,9 @@ int main(int argc, char **argv)
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "rule")) {
     CalendarTest::testRule();
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "bin")) {
+    Bin::test();
     return 0;
   }
 

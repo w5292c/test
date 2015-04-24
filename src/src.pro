@@ -21,11 +21,13 @@ HEADERS += \
   utils.h \
   testbase.h \
   another.h \
-  calendar.h
+  calendar.h \
+  bintoold.h
 
 SOURCES += \
   main.cpp \
   utils.cpp \
   testbase.cpp \
   another.cpp \
-  calendar.cpp
+  calendar.cpp \
+  bintoold.cpp

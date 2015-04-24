@@ -9,6 +9,9 @@
 #include <extendedstorage.h>
 #include <extendedcalendar.h>
 #include <libical/ical.h>
+#include <sys/file.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 using namespace mKCal;
 using namespace KCalCore;
@@ -232,5 +235,20 @@ ICalTimeZone MyTimeZoneData::myparse(const MSTimeZone *tz)
 
 void CalendarTest::testRule()
 {
-  qDebug() << "Testing rules";
+  printf("Out: %d\n", STDOUT_FILENO);
+//  close(STDOUT_FILENO);
+  fprintf(stderr, "Out: %d\n", STDOUT_FILENO);
+  int fd = open("/dev/null", 0);
+  fprintf(stderr, "Out: %d\n", fd);
+
+  RecurrenceRule rule;
+  rule.setRecurrenceType(RecurrenceRule::rDaily);
+  rule.setFrequency(1);
+  rule.setDuration(100);
+  rule.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(0, 1) << RecurrenceRule::WDayPos(0, 2));
+
+  ICalFormat format;
+  const QString &ruleString = format.toString(&rule);
+
+  qDebug() << "RRule:" << ruleString;
 }

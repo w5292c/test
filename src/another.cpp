@@ -34,6 +34,17 @@ QMap<uint, QVariant> testX()
   return TheMap;
 }
 
+static const QLatin1String KStr("Here is: %1, %2");
+
+QByteArray qCleanupFuncinfo(QByteArray info);
+QString qMessageFormatString(QtMsgType type, const QMessageLogContext &context, const QString &str);
 void test()
 {
+  QMessageLogContext context;
+  context.function = "void AClass::hello(void)";
+  context.file = "../src/another.cpp";
+  context.category = "[EAS]";
+  context.line = __LINE__;
+//  qDebug() << qCleanupFuncinfo("void hello(void)");
+  qDebug() << qMessageFormatString(QtDebugMsg, context, "This is a debug string");
 }
