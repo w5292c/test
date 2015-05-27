@@ -12,6 +12,8 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <recurrencerule.h>
+#include <ksystemtimezone.h>
 
 using namespace mKCal;
 using namespace KCalCore;
@@ -27,6 +29,76 @@ public:
 
 void CalendarTest::test()
 {
+#if 0
+  // Get the current time
+  KDateTime next = KDateTime::currentUtcDateTime();
+  qDebug() << "Date:" << next.date() << ", time:" << next.time();
+  // Initialize the recurrence object
+  KCalCore::RecurrenceRule recurrence;
+  recurrence.setReadOnly(false);
+  recurrence.setRecurrenceType(RecurrenceRule::rYearly);
+  recurrence.setFrequency(1);
+  recurrence.setStartDt(next);
+  recurrence.setByMonths(QList<int>() << 10);
+  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(-1, 6));
+/*  recurrence.setYearly(1);*/
+/*  recurrence.addYearlyDay(2);*/
+/*  recurrence.addYearlyMonth(5);*/
+  // Get the next 20 items
+  for (int i = 0; i < 20; ++i) {
+    next = recurrence.getNextDate(next);
+    qDebug() << "Date:" << next.date() << ", time:" << next.time();
+  }
+#endif
+
+#if 0
+  qDebug() << "Expected:" << "20150428T111942Z";
+  const KDateTime &currentLocalDateTime = KDateTime::currentLocalDateTime();
+  qDebug() << "Date-time string:" << currentLocalDateTime.toString();
+  const KDateTime &currentLocalDateTimeUtc =
+      currentLocalDateTime.addMSecs(-currentLocalDateTime.time().msec()).toUtc();
+  qDebug() << "Date-time string (UTC):" << currentLocalDateTimeUtc.toString();
+#endif
+
+#if 0
+    // 1) NO daylight saving time: wMonth MUST be 0;
+    // 2) Single transition: wYear is NOT 0;
+    // 3) Yearly transitions:
+    //    - wYear is 0;
+    //    - ;
+    MSTimeZone tz;
+    tz.Bias = -180;
+    tz.StandardBias = 0;
+    tz.DaylightBias = -60;
+    memset(&tz.StandardDate, 0, sizeof (MSSystemTime));
+    memset(&tz.DaylightDate, 0, sizeof (MSSystemTime));
+    tz.StandardDate.wYear = 0;
+    tz.StandardDate.wMinute = 0;
+    tz.StandardDate.wSecond = 0;
+    tz.StandardDate.wMilliseconds = 0;
+    tz.DaylightDate.wYear = 0;
+    tz.DaylightDate.wMinute = 0;
+    tz.DaylightDate.wSecond = 0;
+    tz.DaylightDate.wMilliseconds = 0;
+    // StandardDate
+    tz.StandardDate.wMonth = 10;
+    tz.StandardDate.wDayOfWeek = 6;
+    tz.StandardDate.wDay = 5; // LAST SUN
+    tz.StandardDate.wHour = 4;
+    // DaylightDate
+    tz.DaylightDate.wMonth = 3;
+    tz.DaylightDate.wDayOfWeek = 6;
+    tz.DaylightDate.wDay = 5; // LAST SUN
+    tz.DaylightDate.wHour = 3;
+
+    ICalTimeZoneSource source;
+    const ICalTimeZone &timezone = source.parse(&tz);
+    qDebug() << "*******************************************************************";
+    qDebug() << "ICAL timezone:" << timezone.vtimezone();
+    qDebug() << "*******************************************************************";
+#endif
+
+#if 1
   ExtendedCalendar::Ptr mCalendar = ExtendedCalendar::Ptr(new ExtendedCalendar(KDateTime::Spec::LocalZone()));
   ExtendedStorage::Ptr mStorage = ExtendedCalendar::defaultStorage(mCalendar);
   mStorage->open();
@@ -40,7 +112,87 @@ void CalendarTest::test()
   qDebug() << "TZ Valid:" << spec.timeZone().isValid();
   qDebug() << "TZ Offsets:" << spec.timeZone().utcOffsets();
 
+  const KDateTime &time = KDateTime::currentLocalDateTime();
+  qDebug() << "Local:" << time.isLocalZone();
+  qDebug() << "Time:" << time.time();
+  qDebug() << "Date:" << time.date();
+
+  const KTimeZone &timezone1 = time.timeZone();
+  qDebug() << "Timezone name:" << timezone1.name();
+
+  /*timezone1.name()*/
+//  const KTimeZone &timezone = KSystemTimeZones::zone("Europe/Moscow");
+//  const KTimeZone &timezone = KSystemTimeZones::readZone("Europe/Moscow");
+//  const KTimeZone &timezone = KSystemTimeZones::zone("Europe/Tallinn");
+  const KTimeZone &timezone = KSystemTimeZones::readZone("Europe/Tallinn");
+  const QStringList &zones = KSystemTimeZones::zones().keys();
+  qDebug() << "Number of zones:" << zones.count();
+  QString collectedZones;
+  foreach (const QString &zone, zones) {
+      collectedZones.append(zone + ":");
+  }
+  qDebug() << "Zones: [" << collectedZones << "]";
+
+  const QList<KTimeZone::Phase> &phases = timezone.phases();
+  qDebug() << "Number of phases:" << phases.count();
+  foreach (const KTimeZone::Phase &phase, phases) {
+    qDebug() << "***********************************************";
+    qDebug() << ">>> isDst:" << phase.isDst();
+    qDebug() << ">>> Offset:" << phase.utcOffset();
+    qDebug() << ">>> Abbreviations:" << phase.abbreviations();
+    qDebug() << ">>> comment:" << phase.comment();
+  }
+  qDebug() << "***********************************************";
+
+  KDateTime next = KDateTime::currentUtcDateTime();
+  const QList<KTimeZone::Transition> &transitions = timezone.transitions(next.toUtc().dateTime());
+  qDebug() << "Number of transitions:" << transitions.count();
+
+  KCalCore::RecurrenceRule recurrence;
+  recurrence.setReadOnly(false);
+  recurrence.setRecurrenceType(RecurrenceRule::rYearly);
+  recurrence.setFrequency(1);
+  recurrence.setStartDt(next);
+  recurrence.setBySeconds(QList<int>() << 0);
+  recurrence.setByMinutes(QList<int>() << 0);
+  recurrence.setByHours(QList<int>() << 1);
+  recurrence.setByMonths(QList<int>() << 10);
+  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(-1, 7));
+  foreach (const KTimeZone::Transition &transition, transitions) {
+    const KTimeZone::Phase &phase = transition.phase();
+    if (phase.isDst()) {
+    } else {
+      next = recurrence.getNextDate(next);
+      if (transition.time() != next.dateTime()) {
+        qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
+        qDebug() << ">>> Time1:" << transition.time();
+        qDebug() << ">>> Phase isDst:" << phase.isDst();
+        qDebug() << ">>> Phase offset:" << phase.utcOffset();
+        qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
+        qDebug() << ">>> Phase comment:" << phase.comment();
+      } else {
+        qDebug() << "Match:" << next.dateTime();
+      }
+    }
+  }
+
+  qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
+  qDebug() << "Timezone offset:" << timezone.currentOffset();
+
+  const QString &countryCode = timezone.countryCode();
+  qDebug() << "Timezone country code:" << countryCode;
+
+  qDebug() << "Abbreviations:" << timezone.abbreviations();
+  qDebug() << "Timezone type:" << timezone.type();
+  const QDateTime &currTime = QDateTime::currentDateTimeUtc();
+  const int offset = timezone.offsetAtUtc(currTime);
+  qDebug() << "Curr time:" << currTime << ", offset:" << offset << ", bias:" << offset / -60;
+#endif // Playing with transitions
+
 #if 0
+  const KDateTime &time = KDateTime::currentUtcDateTime();
+  qDebug() << "Now:" << time.date() << ", time:" << time.time() << ", time_t:" << time.toTime_t();
 //  qDebug() << "Timezone XXX:" << iz.vtimezone();
 
   const QString &uid = KCalCore::CalFormat::createUniqueId();
@@ -89,6 +241,8 @@ void CalendarTest::test()
   KDateTime dataTime = KDateTime::fromString(testTime, KDateTime::ISODate); //, TimeFormat format = ISODate, bool *negZero = 0);
   qDebug() << "DateTime, date:" << dataTime.date() << ", time:" << dataTime.time();
 #endif
+  uuid_t out;
+  uuid_generate_random(out);
 }
 
 MSTimeZone createTimezone()

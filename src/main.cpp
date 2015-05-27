@@ -26,6 +26,7 @@
 
 #include "utils.h"
 #include "another.h"
+#include "sqltest.h"
 #include "calendar.h"
 #include "bintoold.h"
 
@@ -109,6 +110,9 @@ int main(int argc, char **argv)
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "bin")) {
     Bin::test();
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "sql")) {
+    test_sql();
     return 0;
   }
 

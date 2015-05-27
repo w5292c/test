@@ -26,6 +26,7 @@
 
 #include <QDebug>
 #include <QVariant>
+#include <KDateTime>
 
 static QMap<uint, QVariant> TheMap;
 
@@ -40,6 +41,13 @@ QByteArray qCleanupFuncinfo(QByteArray info);
 QString qMessageFormatString(QtMsgType type, const QMessageLogContext &context, const QString &str);
 void test()
 {
+  KDateTime time;
+  time.setTime_t(12345678);
+  qDebug() << "Type:" << time.timeType();
+  QList<QVariant> list;
+  list << 123ULL << "Hello";
+  qDebug() << "List:" << list;
+#if 0
   QMessageLogContext context;
   context.function = "void AClass::hello(void)";
   context.file = "../src/another.cpp";
@@ -47,4 +55,5 @@ void test()
   context.line = __LINE__;
 //  qDebug() << qCleanupFuncinfo("void hello(void)");
   qDebug() << qMessageFormatString(QtDebugMsg, context, "This is a debug string");
+#endif
 }
