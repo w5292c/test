@@ -18,8 +18,7 @@
 using namespace mKCal;
 using namespace KCalCore;
 
-static MSTimeZone createTimezone();
-//static ICalTimeZone myparse(const MSTimeZone *tz);
+static bool testTimezone(const QString &timezoneName);
 
 class MyTimeZoneData : public ICalTimeZoneData
 {
@@ -27,126 +26,85 @@ public:
   ICalTimeZone myparse(const MSTimeZone *tz);
 };
 
+static int weekOfMonth(const QDate &date, bool &isLast)
+{
+  qDebug() << "in:" << date;
+  int result = 0;
+  if (date.isValid()) {
+    // Move 'day' to the start of the month/year
+    QDate day(date.year(), date.month(), 1);
+    while (true) {
+      ++result;
+      day = day.addDays(7);
+      qDebug() << "Check:" << day << " >? " << date;
+      if (day > date) {
+        break;
+      }
+    }
+
+    isLast = (day.month() != date.month());
+  }
+
+  qDebug() << "out" << result << isLast;
+  return result;
+}
+
 void CalendarTest::test()
 {
 #if 0
-  // Get the current time
-  KDateTime next = KDateTime::currentUtcDateTime();
-  qDebug() << "Date:" << next.date() << ", time:" << next.time();
-  // Initialize the recurrence object
-  KCalCore::RecurrenceRule recurrence;
-  recurrence.setReadOnly(false);
-  recurrence.setRecurrenceType(RecurrenceRule::rYearly);
-  recurrence.setFrequency(1);
-  recurrence.setStartDt(next);
-  recurrence.setByMonths(QList<int>() << 10);
-  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(-1, 6));
-/*  recurrence.setYearly(1);*/
-/*  recurrence.addYearlyDay(2);*/
-/*  recurrence.addYearlyMonth(5);*/
-  // Get the next 20 items
-  for (int i = 0; i < 20; ++i) {
-    next = recurrence.getNextDate(next);
-    qDebug() << "Date:" << next.date() << ", time:" << next.time();
-  }
-#endif
-
-#if 0
-  qDebug() << "Expected:" << "20150428T111942Z";
-  const KDateTime &currentLocalDateTime = KDateTime::currentLocalDateTime();
-  qDebug() << "Date-time string:" << currentLocalDateTime.toString();
-  const KDateTime &currentLocalDateTimeUtc =
-      currentLocalDateTime.addMSecs(-currentLocalDateTime.time().msec()).toUtc();
-  qDebug() << "Date-time string (UTC):" << currentLocalDateTimeUtc.toString();
-#endif
-
-#if 0
-    // 1) NO daylight saving time: wMonth MUST be 0;
-    // 2) Single transition: wYear is NOT 0;
-    // 3) Yearly transitions:
-    //    - wYear is 0;
-    //    - ;
-    MSTimeZone tz;
-    tz.Bias = -180;
-    tz.StandardBias = 0;
-    tz.DaylightBias = -60;
-    memset(&tz.StandardDate, 0, sizeof (MSSystemTime));
-    memset(&tz.DaylightDate, 0, sizeof (MSSystemTime));
-    tz.StandardDate.wYear = 0;
-    tz.StandardDate.wMinute = 0;
-    tz.StandardDate.wSecond = 0;
-    tz.StandardDate.wMilliseconds = 0;
-    tz.DaylightDate.wYear = 0;
-    tz.DaylightDate.wMinute = 0;
-    tz.DaylightDate.wSecond = 0;
-    tz.DaylightDate.wMilliseconds = 0;
-    // StandardDate
-    tz.StandardDate.wMonth = 10;
-    tz.StandardDate.wDayOfWeek = 6;
-    tz.StandardDate.wDay = 5; // LAST SUN
-    tz.StandardDate.wHour = 4;
-    // DaylightDate
-    tz.DaylightDate.wMonth = 3;
-    tz.DaylightDate.wDayOfWeek = 6;
-    tz.DaylightDate.wDay = 5; // LAST SUN
-    tz.DaylightDate.wHour = 3;
-
-    ICalTimeZoneSource source;
-    const ICalTimeZone &timezone = source.parse(&tz);
-    qDebug() << "*******************************************************************";
-    qDebug() << "ICAL timezone:" << timezone.vtimezone();
-    qDebug() << "*******************************************************************";
-#endif
-
-#if 1
-  ExtendedCalendar::Ptr mCalendar = ExtendedCalendar::Ptr(new ExtendedCalendar(KDateTime::Spec::LocalZone()));
-  ExtendedStorage::Ptr mStorage = ExtendedCalendar::defaultStorage(mCalendar);
-  mStorage->open();
-
-  MSTimeZone tz = createTimezone();
-  const KCalCore::ICalTimeZone &iz = mCalendar->parseZone(&tz);
-  const KDateTime::Spec spec(iz);
-  qDebug() << "Valid:" << spec.isValid();
-  qDebug() << "Type:" << spec.type();
-  qDebug() << "Offset:" << spec.utcOffset();
-  qDebug() << "TZ Valid:" << spec.timeZone().isValid();
-  qDebug() << "TZ Offsets:" << spec.timeZone().utcOffsets();
-
-  const KDateTime &time = KDateTime::currentLocalDateTime();
-  qDebug() << "Local:" << time.isLocalZone();
-  qDebug() << "Time:" << time.time();
-  qDebug() << "Date:" << time.date();
-
-  const KTimeZone &timezone1 = time.timeZone();
-  qDebug() << "Timezone name:" << timezone1.name();
-
-  /*timezone1.name()*/
-//  const KTimeZone &timezone = KSystemTimeZones::zone("Europe/Moscow");
-//  const KTimeZone &timezone = KSystemTimeZones::readZone("Europe/Moscow");
-//  const KTimeZone &timezone = KSystemTimeZones::zone("Europe/Tallinn");
-  const KTimeZone &timezone = KSystemTimeZones::readZone("Europe/Tallinn");
+  int n = 0;
   const QStringList &zones = KSystemTimeZones::zones().keys();
   qDebug() << "Number of zones:" << zones.count();
-  QString collectedZones;
   foreach (const QString &zone, zones) {
-      collectedZones.append(zone + ":");
+    const bool res = testTimezone(zone);
+    if (!res) {
+      ++n;
+//      qDebug() << "Zone:" << zone << ":" << (res ? "PASS" : "FAILED");
+    }
   }
-  qDebug() << "Zones: [" << collectedZones << "]";
+  qDebug() << "Failed " << n << " from " << zones.count() << " timezones.";
+#else
+  QString timezone = "Pacific/Fiji";
+  bool res = testTimezone(timezone);
+  qDebug() << "Zone: " << timezone << (res ? "PASS" : "FAILED");
+#endif
+}
 
-  const QList<KTimeZone::Phase> &phases = timezone.phases();
-  qDebug() << "Number of phases:" << phases.count();
-  foreach (const KTimeZone::Phase &phase, phases) {
-    qDebug() << "***********************************************";
-    qDebug() << ">>> isDst:" << phase.isDst();
-    qDebug() << ">>> Offset:" << phase.utcOffset();
-    qDebug() << ">>> Abbreviations:" << phase.abbreviations();
-    qDebug() << ">>> comment:" << phase.comment();
-  }
-  qDebug() << "***********************************************";
+bool testTimezone(const QString &timezoneName)
+{
+  qDebug() << "Testing:" << timezoneName;
+  // BEGIN: this code is required for linking
+  uuid_t out;
+  uuid_generate_random(out);
+  // END: this code is required for linking
 
+#if 1
+  const KTimeZone &timezone = KSystemTimeZones::readZone(timezoneName);
   KDateTime next = KDateTime::currentUtcDateTime();
   const QList<KTimeZone::Transition> &transitions = timezone.transitions(next.toUtc().dateTime());
-  qDebug() << "Number of transitions:" << transitions.count();
+//  qDebug() << "Number of transitions:" << transitions.count();
+  if (transitions.isEmpty()) {
+//    qDebug() << "1";
+    return true;
+  }
+  if (transitions.length() < 2) {
+    qDebug() << "Too few transitions";
+    return false;
+  }
+  const KTimeZone::Transition &_transition1 = transitions.at(0);
+  const KTimeZone::Transition &_transition2 = transitions.at(1);
+  const KTimeZone::Phase &_phase1 = _transition1.phase();
+  const KTimeZone::Phase &_phase2 = _transition2.phase();
+  if ((_phase1.isDst() && _phase2.isDst()) || (!_phase1.isDst() && !_phase2.isDst())) {
+    qDebug() << "2";
+    return false;
+  }
+  // STD
+  const KTimeZone::Phase &phase1 = (!_phase1.isDst()) ? _phase1 : _phase2;
+  const QDateTime &time1 = (!_phase1.isDst()) ? _transition1.time() : _transition2.time();
+  // DST
+  const KTimeZone::Phase &phase2 = ( _phase2.isDst()) ? _phase2 : _phase1;
+  const QDateTime &time2 = ( _phase2.isDst()) ? _transition2.time() : _transition1.time();
 
   KCalCore::RecurrenceRule recurrence;
   recurrence.setReadOnly(false);
@@ -154,149 +112,122 @@ void CalendarTest::test()
   recurrence.setFrequency(1);
   recurrence.setStartDt(next);
   recurrence.setBySeconds(QList<int>() << 0);
-  recurrence.setByMinutes(QList<int>() << 0);
-  recurrence.setByHours(QList<int>() << 1);
-  recurrence.setByMonths(QList<int>() << 10);
-  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(-1, 7));
+  recurrence.setByMinutes(QList<int>() << time1.time().minute());
+  recurrence.setByHours(QList<int>() << time1.time().hour());
+  recurrence.setByMonths(QList<int>() << time1.date().month());
+//  int weekNumber1 = time1.date().weekNumber();
+  bool isLast1 = false;
+  int weekNumber1 = weekOfMonth(time1.date(), isLast1);
+//  if (weekNumber1 == 4 || weekNumber1 == 5) {
+//  if (isLast1) {
+//    weekNumber1 = -1;
+//  }
+//  }
+  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber1, time1.date().dayOfWeek()));
+
+  KDateTime next2 = next;
+  KCalCore::RecurrenceRule recurrence2;
+  recurrence2.setReadOnly(false);
+  recurrence2.setRecurrenceType(RecurrenceRule::rYearly);
+  recurrence2.setFrequency(1);
+  recurrence2.setStartDt(next);
+  recurrence2.setBySeconds(QList<int>() << 0);
+  recurrence2.setByMinutes(QList<int>() << time2.time().minute());
+  recurrence2.setByHours(QList<int>() << time2.time().hour());
+  recurrence2.setByMonths(QList<int>() << time2.date().month());
+//  int weekNumber2 = time2.date().weekNumber();
+  bool isLast2 = false;
+  int weekNumber2 = weekOfMonth(time2.date(), isLast2);
+//  if (weekNumber2 == 4 || weekNumber2 == 5) {
+//  if (isLast2) {
+//    weekNumber2 = -1;
+//  }
+  recurrence2.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber2, time2.date().dayOfWeek()));
+
+  bool result1 = true;
+  bool result2 = true;
   foreach (const KTimeZone::Transition &transition, transitions) {
     const KTimeZone::Phase &phase = transition.phase();
     if (phase.isDst()) {
+      next2 = recurrence2.getNextDate(next2);
+      if (transition.time() != next2.dateTime()) {
+        qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
+        qDebug() << ">>> Time1:" << transition.time();
+        qDebug() << ">>> Time2:" << next2.dateTime();
+        qDebug() << ">>> Phase isDst:" << phase.isDst();
+//        qDebug() << ">>> Phase offset:" << phase.utcOffset();
+//        qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
+//        qDebug() << ">>> Phase comment:" << phase.comment();
+        result1 = false;
+      } else {
+//        qDebug() << "Match:" << next2.dateTime();
+      }
     } else {
       next = recurrence.getNextDate(next);
       if (transition.time() != next.dateTime()) {
         qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
         qDebug() << ">>> Time1:" << transition.time();
+        qDebug() << ">>> Time2:" << next.dateTime();
+        qDebug() << ">>> Phase isDst:" << phase.isDst();
+//        qDebug() << ">>> Phase offset:" << phase.utcOffset();
+//        qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
+//        qDebug() << ">>> Phase comment:" << phase.comment();
+        result2 = false;
+      } else {
+//        qDebug() << "Match:" << next.dateTime();
+      }
+    }
+  }
+  if (result1 && result2) {
+    return true;
+  }
+
+  if (result2 && isLast1) {
+    qDebug() << "Reset 1";
+    weekNumber1 = -1;
+    recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber1, time1.date().dayOfWeek()));
+  }
+  if (result1 && isLast2) {
+    qDebug() << "Reset 2";
+    weekNumber2 = -1;
+    recurrence2.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber2, time2.date().dayOfWeek()));
+  }
+
+  result1 = true;
+  result2 = true;
+  next = KDateTime::currentUtcDateTime();
+  next2 = KDateTime::currentUtcDateTime();
+  foreach (const KTimeZone::Transition &transition, transitions) {
+    const KTimeZone::Phase &phase = transition.phase();
+    if (phase.isDst()) {
+      next2 = recurrence2.getNextDate(next2);
+      if (transition.time() != next2.dateTime()) {
+        qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
+        qDebug() << ">>> Time1 (real):" << transition.time();
+        qDebug() << ">>> Time2 (rule):" << next2.dateTime();
         qDebug() << ">>> Phase isDst:" << phase.isDst();
         qDebug() << ">>> Phase offset:" << phase.utcOffset();
         qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
         qDebug() << ">>> Phase comment:" << phase.comment();
-      } else {
-        qDebug() << "Match:" << next.dateTime();
+        result1 = false;
+      }
+    } else {
+      next = recurrence.getNextDate(next);
+      if (transition.time() != next.dateTime()) {
+        qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
+        qDebug() << ">>> Time1 (real):" << transition.time();
+        qDebug() << ">>> Time2 (rule):" << next.dateTime();
+        qDebug() << ">>> Phase isDst:" << phase.isDst();
+        qDebug() << ">>> Phase offset:" << phase.utcOffset();
+        qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
+        qDebug() << ">>> Phase comment:" << phase.comment();
+        result2 = false;
       }
     }
   }
 
-  qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-
-  qDebug() << "Timezone offset:" << timezone.currentOffset();
-
-  const QString &countryCode = timezone.countryCode();
-  qDebug() << "Timezone country code:" << countryCode;
-
-  qDebug() << "Abbreviations:" << timezone.abbreviations();
-  qDebug() << "Timezone type:" << timezone.type();
-  const QDateTime &currTime = QDateTime::currentDateTimeUtc();
-  const int offset = timezone.offsetAtUtc(currTime);
-  qDebug() << "Curr time:" << currTime << ", offset:" << offset << ", bias:" << offset / -60;
+  return result1 && result2;
 #endif // Playing with transitions
-
-#if 0
-  const KDateTime &time = KDateTime::currentUtcDateTime();
-  qDebug() << "Now:" << time.date() << ", time:" << time.time() << ", time_t:" << time.toTime_t();
-//  qDebug() << "Timezone XXX:" << iz.vtimezone();
-
-  const QString &uid = KCalCore::CalFormat::createUniqueId();
-  icalcomponent *const tzcomp = icalcomponent_new(ICAL_VTIMEZONE_COMPONENT);
-  icalcomponent_add_property(tzcomp, icalproperty_new_tzid(uid.toUtf8()));
-  icalcomponent *phaseCompStd = icalcomponent_new(ICAL_XSTANDARD_COMPONENT);
-  icalcomponent *phaseCompDst = icalcomponent_new(ICAL_XDAYLIGHT_COMPONENT);
-
-  icalcomponent_add_component(tzcomp, phaseCompStd);
-  icalcomponent_add_component(tzcomp, phaseCompDst);
-
-  ICalTimeZoneSource source;
-  const ICalTimeZone &timezone1 = source.parse(tzcomp);
-  qDebug() << "Timezone YYY:" << timezone1.vtimezone();
-
-  uuid_t out;
-  uuid_generate_random(out);
-//  qDebug() << (const char *)out;
-
-  ICalTimeZones timezones;
-  qDebug() << "Initial timezone count:" << timezones.count();
-  ICalTimeZoneSource sourceA;
-  const ICalTimeZone &timezoneB = sourceA.parse(&tz/*, timezones*/);
-  qDebug() << "Transitions 1:" << timezoneB.transitions().length();
-  Q_UNUSED(timezone1);
-  qDebug() << "Timezone count1:" << timezones.count() << ", " << tz.Bias;
-  MSTimeZone tz2 = createTimezone();
-  const ICalTimeZone &timezone2 = source.parse(&tz2/*, timezones*/);
-  qDebug() << "Transitions 2:" << timezone2.transitions().length();
-  qDebug() << "Timezone count2:" << timezones.count() << ", " << tz2.Bias;
-  Q_UNUSED(timezone2);
-  qDebug() << "Timezone test 1:" << timezone1.utcOffsets();
-  qDebug() << "Timezone test 2:" << timezone2.utcOffsets();
-
-  qDebug() << "ICAL 1:" << timezone1.vtimezone();
-  qDebug() << "ICAL 2:" << timezone2.vtimezone();
-
-  const Incidence::Ptr event(new Event());
-//  event->
-
-  ICalFormat format;
-  const QString &encoded = format.toICalString(event);
-  qDebug() << "Encoded:[" << encoded << "]";
-
-  QLatin1String testTime("20150330T121005Z");
-  KDateTime dataTime = KDateTime::fromString(testTime, KDateTime::ISODate); //, TimeFormat format = ISODate, bool *negZero = 0);
-  qDebug() << "DateTime, date:" << dataTime.date() << ", time:" << dataTime.time();
-#endif
-  uuid_t out;
-  uuid_generate_random(out);
-}
-
-MSTimeZone createTimezone()
-{
-  MSTimeZone timezone;
-  memset(&timezone.StandardDate, 0, sizeof (timezone.StandardDate));
-  memset(&timezone.DaylightDate, 0, sizeof (timezone.DaylightDate));
-
-  timezone.StandardDate.wYear = 0;
-  timezone.StandardDate.wMonth = 0;
-  timezone.StandardDate.wDay = 0;
-//  qint16 wHour;
-//  qint16 wMinute;
-//  qint16 wSecond;
-//  qint16 wMilliseconds;
-  timezone.DaylightDate.wYear = 0;
-  timezone.DaylightDate.wMonth = 0;
-  timezone.DaylightDate.wDay = 0;
-
-  static int n = 0;
-  QByteArray stdName = QByteArray::fromHex(
-    "28 00 55 00  54 00 43 00 2b 00 30 00 34 00 3a 00 "
-    "30 00 30 00  29 00 20 00 4d 00 6f 00 73 00 63 00 "
-    "6f 00 77 00  2c 00 20 00 53 00 74 00 2e 00 20 00 "
-    "50 00 65 00  74 00 65 00 72 00 73 00 62 00 75 00 ");
-  stdName[2] = stdName[2] + n; ++n;
-  QByteArray dayName = QByteArray::fromHex(
-    "28 00 55 00  54 00 43 00 2b 00 30 00 34 00 3a 00"
-    "30 00 30 00  29 00 20 00 4d 00 6f 00 73 00 63 00"
-    "6f 00 77 00  2c 00 20 00 53 00 74 00 2e 00 20 00"
-    "50 00 65 00  74 00 65 00 72 00 73 00 62 00 75 00");
-
-  const QString &stdNameString = QString::fromUtf16(reinterpret_cast<const ushort*>(stdName.constData()));
-  const QString &dayNameString = QString::fromUtf16(reinterpret_cast<const ushort*>(dayName.constData()));
-
-  qDebug() << "Std buffer length:" << stdName.length() << ", name:" << stdNameString;
-  qDebug() << "Day buffer length:" << dayName.length() << ", name:" << dayNameString;
-  timezone.StandardName = stdNameString;
-  timezone.DaylightName = dayNameString;
-  timezone.Bias = (int)0xFFFFFF4CU;
-
-  timezone.StandardBias = 0;
-  timezone.DaylightBias = 0;
-  qDebug() << "Bias" << timezone.Bias << ", std:" << timezone.StandardBias << ", day:" << timezone.DaylightBias;
-
-//  QByteArray buffer;
-//  buffer.append("\x01\x02\x03\x04\x05");
-//  QDataStream stream(buffer);
-//  stream.setByteOrder(QDataStream::LittleEndian);
-//  qint32 partsCount = 0;
-//  stream >> partsCount;
-//  qDebug() << "Here is XXXXXXXXXXXXXXX:" << hex << partsCount;
-
-  return timezone;
 }
 
 /*
@@ -335,57 +266,6 @@ typedef struct _MSTimeZone {
   long         DaylightBias;
 } MSTimeZone;
 */
-#if 0
-ICalTimeZone MyTimeZoneData::myparse(const MSTimeZone *tz)
-{
-//  ICalTimeZoneData kdata;
-
-  // General properties.
-  uuid_t uuid;
-  char suuid[64];
-  uuid_generate_random( uuid );
-  uuid_unparse( uuid, suuid );
-  QString name = QString( suuid );
-
-  // Create phases.
-  QList<KTimeZone::Phase> phases;
-
-  QList<QByteArray> standardAbbrevs;
-  standardAbbrevs += tz->StandardName.toLatin1();
-  const KTimeZone::Phase standardPhase(
-    ( tz->Bias + tz->StandardBias ) * -60,
-    standardAbbrevs, false,
-    "Microsoft TIME_ZONE_INFORMATION" );
-  phases += standardPhase;
-
-  QList<QByteArray> daylightAbbrevs;
-  daylightAbbrevs += tz->DaylightName.toLatin1();
-  const KTimeZone::Phase daylightPhase(
-    ( tz->Bias + tz->DaylightBias ) * -60,
-    daylightAbbrevs, true,
-    "Microsoft TIME_ZONE_INFORMATION" );
-  phases += daylightPhase;
-
-  // Set phases used by the time zone, but note that previous time zone
-  // abbreviation is not known.
-  const int prevOffset = tz->Bias * -60;
-  setPhases( phases, prevOffset );
-
-  // Create transitions
-  QList<KTimeZone::Transition> transitions;
-//  ICalTimeZoneSourcePrivate::parseTransitions(
-//    tz->StandardDate, standardPhase, prevOffset, transitions );
-//  ICalTimeZoneSourcePrivate::parseTransitions(
-//    tz->DaylightDate, daylightPhase, prevOffset, transitions );
-
-  qSort( transitions );
-  setTransitions( transitions );
-
-  ICalTimeZoneData *idata = new ICalTimeZoneData( *this, KTimeZone( name ), QDate() );
-
-  return ICalTimeZone( *this, name, idata );
-}
-#endif
 
 void CalendarTest::testRule()
 {
