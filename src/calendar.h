@@ -6,7 +6,6 @@ class CalendarTest
 public:
   static void init();
   static void test();
-  static void testRule();
 };
 
 #endif // CALENDAR_TEST_H
