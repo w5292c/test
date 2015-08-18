@@ -69,6 +69,15 @@ void CalendarTest::test()
       const ICalTimeZone &zone = it.value();
       qDebug() << "Zone info:" << zone.vtimezone();
     }
+
+    KDateTime original(QDate(2015, 7, 10), QTime(14, 33, 45), KDateTime::Spec::UTC());
+    qDebug() << "Original time:" << original.dateTime();
+
+    it = loadedZones;
+    while (it.hasNext()) {
+      it.next();
+      qDebug() << "Time:" << original.toZone(it.value()).dateTime();
+    }
   } else {
     qCritical() << "Failed to convert";
   }
