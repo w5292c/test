@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <icalformat.h>
 #include <icaltimezones.h>
+#include <memorycalendar.h>
 #include <extendedstorage.h>
 #include <extendedcalendar.h>
 #include <libical/ical.h>
@@ -19,7 +20,7 @@ using namespace mKCal;
 using namespace KCalCore;
 
 namespace {
-void initTestMsTimezone(MSTimeZone &msTimezone);
+void initTestMsTimezone(MSTimeZone &msTimezone, int variant);
 }
 
 void CalendarTest::test()
@@ -27,14 +28,50 @@ void CalendarTest::test()
   ICalTimeZones zones;
 
   MSTimeZone msTimezone;
-  initTestMsTimezone(msTimezone);
+  MSTimeZone msTimezone1;
+  MSTimeZone msTimezone2;
+  MSTimeZone msTimezone3;
+  initTestMsTimezone(msTimezone, 0);
+  initTestMsTimezone(msTimezone1, 1);
+  initTestMsTimezone(msTimezone2, 2);
+  initTestMsTimezone(msTimezone3, 3);
 
   ICalTimeZoneSource source;
   const ICalTimeZone &zone1 = source.parse(&msTimezone, zones);
-  const ICalTimeZone &zone2 = source.parse(&msTimezone, zones);
+  const ICalTimeZone &zone2 = source.parse(&msTimezone1, zones);
+  const ICalTimeZone &zone3 = source.parse(&msTimezone2, zones);
+  const ICalTimeZone &zone4 = source.parse(&msTimezone3, zones);
 
   qDebug() << "Zone 1:" << zone1.vtimezone();
   qDebug() << "Zone 2:" << zone2.vtimezone();
+  qDebug() << "Zone 3:" << zone3.vtimezone();
+  qDebug() << "Zone 4:" << zone4.vtimezone();
+
+  const MemoryCalendar::Ptr &temp = MemoryCalendar::Ptr(new MemoryCalendar(KDateTime::Spec::UTC()));
+  temp->setTimeZones(new ICalTimeZones(zones));
+
+  ICalFormat ical;
+  const QByteArray &data = ical.toString( temp , QString() ).toUtf8();
+  qDebug() << "Calendar data:" << data;
+
+  ICalFormat ical2;
+  const MemoryCalendar::Ptr &temp2 = MemoryCalendar::Ptr(new MemoryCalendar(KDateTime::Spec::UTC()));
+  if (ical2.fromString(temp2 , QString::fromUtf8(data))) {
+    qDebug() << "Loaded timezone information";
+    ICalTimeZones *zones = temp->timeZones();
+    const int n = zones->count();
+    qDebug() << "Number of loaded zones:" << n;
+    const QMap<QString, ICalTimeZone> &loadedZones = zones->zones();
+    QMapIterator<QString, ICalTimeZone> it(loadedZones);
+    while (it.hasNext()) {
+      it.next();
+      qDebug() << "Key:" << it.key();
+      const ICalTimeZone &zone = it.value();
+      qDebug() << "Zone info:" << zone.vtimezone();
+    }
+  } else {
+    qCritical() << "Failed to convert";
+  }
 }
 
 void CalendarTest::init()
@@ -45,13 +82,34 @@ void CalendarTest::init()
 
 namespace {
 
-void initTestMsTimezone(MSTimeZone &msTimezone)
+void initTestMsTimezone(MSTimeZone &msTimezone, int variant)
 {
-  msTimezone.Bias = -180;
-  msTimezone.StandardName = "MSK";
+  int bias = 0;
+  QString name;
+  switch (variant) {
+  case 0:
+    bias = -180;
+    name = "MSK1";
+    break;
+  case 1:
+    bias = -180;
+    name = "MSK2";
+    break;
+  case 2:
+    bias = -240;
+    name = "MSK3";
+    break;
+  case 3:
+    bias = -240;
+    name = "MSK4";
+    break;
+  }
+
+  msTimezone.Bias = bias;
+  msTimezone.StandardName = name;
   memset(&msTimezone.StandardDate, 0, sizeof (MSSystemTime));
   msTimezone.StandardBias = 0;
-  msTimezone.DaylightName = "MSK";
+  msTimezone.DaylightName = name;
   memset(&msTimezone.DaylightDate, 0, sizeof (MSSystemTime));
   msTimezone.DaylightBias = 0;
 }
