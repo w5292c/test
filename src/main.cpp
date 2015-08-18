@@ -57,6 +57,7 @@ QMap<int, QString> TheMap;
 int main(int argc, char **argv)
 {
   QCoreApplication app(argc, argv);
+  CalendarTest::init();
 
   if (2 == argc && !strcmp(argv[1], "reg")) {
     Utils::registerAccount();

@@ -19,6 +19,7 @@ using namespace mKCal;
 using namespace KCalCore;
 
 static bool testTimezone(const QString &timezoneName);
+static bool checkTransitions(const QList<KTimeZone::Transition> &transitions, MSTimeZone &msTimezone);
 
 class MyTimeZoneData : public ICalTimeZoneData
 {
@@ -26,32 +27,258 @@ public:
   ICalTimeZone myparse(const MSTimeZone *tz);
 };
 
-static int weekOfMonth(const QDate &date, bool &isLast)
+int weekOfMonth2(const QDate &date, bool &isLast)
 {
-  qDebug() << "in:" << date;
-  int result = 0;
-  if (date.isValid()) {
-    // Move 'day' to the start of the month/year
-    QDate day(date.year(), date.month(), 1);
-    while (true) {
-      ++result;
-      day = day.addDays(7);
-      qDebug() << "Check:" << day << " >? " << date;
-      if (day > date) {
-        break;
-      }
+    int result = 0;
+    if (date.isValid()) {
+        // Find the number of the week-day in the month
+        result = (date.day() + 6) / 7;
+        // Check if the date is the last week-day in the month
+        isLast = (date.month() != date.addDays(7).month());
     }
 
-    isLast = (day.month() != date.month());
-  }
-
-  qDebug() << "out" << result << isLast;
-  return result;
+    qDebug() << "Checked date:" << date
+             << ", week-of-month:" << result << ", last:" << isLast;
+    return result;
 }
+
+int weekOfMonth(const QDate &date, bool &isLast)
+{
+    int result = 0;
+    if (date.isValid()) {
+        // Move 'day' to the start of the month/year
+        QDate day(date.year(), date.month(), 1);
+        // Find the first day in month of the input week-day
+        while (day.dayOfWeek() != date.dayOfWeek()) {
+            day = day.addDays(1);
+        }
+        result = 1;
+        while (day != date) {
+            ++result;
+            day = day.addDays(7);
+        }
+        // Check if the date is the last week-day in the month
+        isLast = (date.month() != date.addDays(7).month());
+    }
+
+    qDebug() << "Checked date:" << date << ", week-of-month:" << result << ", last:" << isLast;
+    return result;
+}
+
+bool checkTransitionsForRule(const QList<KTimeZone::Transition> &transitions,
+                      const KCalCore::RecurrenceRule &rule, bool dst, bool required)
+{
+    if (transitions.isEmpty()) {
+        return false;
+    }
+
+    const KTimeZone::Transition &firstTransition = transitions.at(0);
+    KDateTime next = KDateTime(firstTransition.time().addSecs(-1), KDateTime::Spec::UTC());
+    bool expectedDst = firstTransition.phase().isDst();
+    foreach (const KTimeZone::Transition &transition, transitions) {
+        const KTimeZone::Phase &phase = transition.phase();
+        // Check the phase DST/STD
+        const bool phaseDst = phase.isDst();
+        if (phaseDst != expectedDst) {
+            return false;
+        }
+        // Update the expected DST/STD
+        expectedDst = !expectedDst;
+        if (phaseDst == dst) {
+            next = rule.getNextDate(next);
+            if (next.dateTime() != transition.time()) {
+                if (required) {
+                    qWarning() << "Check failed (rule):" << next.dateTime()
+                               << "does not match (expected):" << transition.time();
+                }
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool checkTransitions(const QList<KTimeZone::Transition> &transitions, MSTimeZone &msTimezone)
+{
+    if (transitions.isEmpty()) {
+        return true;
+    }
+    if (transitions.length() < 2) {
+        qCritical() << "Too few transitions";
+        return false;
+    }
+
+    // Next, check if the next 2 transitions define STD and DST phases
+    const KTimeZone::Transition &_transition1 = transitions.at(0);
+    const KTimeZone::Transition &_transition2 = transitions.at(1);
+    const KTimeZone::Phase &_phase1 = _transition1.phase();
+    const KTimeZone::Phase &_phase2 = _transition2.phase();
+    const KTimeZone::Phase &phaseStd = (!_phase1.isDst()) ? _phase1 : _phase2;
+    const KTimeZone::Phase &phaseDst = ( _phase1.isDst()) ? _phase1 : _phase2;
+    if (phaseStd.isDst() || !phaseDst.isDst()) {
+        qCritical() << "Unexpected phases types";
+        return false;
+    }
+
+    // Get the transitions to STD/DST phases
+    const KTimeZone::Transition &transitionStd = (!_phase1.isDst()) ? _transition1 : _transition2;
+    const KTimeZone::Transition &transitionDst = ( _phase1.isDst()) ? _transition1 : _transition2;
+    const QDateTime &startStd = transitionStd.time();
+    const QDate &startDateStd = startStd.date();
+    const QTime &startTimeStd = startStd.time();
+    const QDateTime &startDst = transitionDst.time();
+    const QDate &startDateDst = startDst.date();
+    const QTime &startTimeDst = startDst.time();
+
+    KCalCore::RecurrenceRule ruleStd;
+    ruleStd.setReadOnly(false);
+    ruleStd.setRecurrenceType(RecurrenceRule::rYearly);
+    ruleStd.setFrequency(1);
+    ruleStd.setStartDt(KDateTime(startStd, KDateTime::Spec::UTC()));
+    ruleStd.setBySeconds(QList<int>() << startTimeStd.second());
+    ruleStd.setByMinutes(QList<int>() << startTimeStd.minute());
+    ruleStd.setByHours(QList<int>() << startTimeStd.hour());
+    ruleStd.setByMonths(QList<int>() << startDateStd.month());
+    bool lastWeekStd = false;
+    int monthWeekStd = weekOfMonth(startDateStd, lastWeekStd);
+    bool lastWeekStd2 = false;
+    int monthWeekStd2 = weekOfMonth2(startDateStd, lastWeekStd2);
+    if (lastWeekStd2 != lastWeekStd || monthWeekStd2 != monthWeekStd) {
+        qCritical() << "Does not match!!!!!!!!!!!!!";
+        exit(1);
+        return false;
+    }
+    if (monthWeekStd == 5 && lastWeekStd) {
+        monthWeekStd = -1;
+    }
+    ruleStd.setByDays(QList<RecurrenceRule::WDayPos>() <<
+                      RecurrenceRule::WDayPos(monthWeekStd, startDateStd.dayOfWeek()));
+    bool success = true;
+    if (!checkTransitionsForRule(transitions, ruleStd, false, monthWeekStd == -1 || !lastWeekStd)) {
+        // Try last-week-of-month rule
+        if (monthWeekStd != -1 && lastWeekStd) {
+            monthWeekStd = -1;
+            ruleStd.setByDays(QList<RecurrenceRule::WDayPos>() <<
+                              RecurrenceRule::WDayPos(monthWeekStd, startDateStd.dayOfWeek()));
+            if (!checkTransitionsForRule(transitions, ruleStd, false, true)) {
+                qWarning() << "STD transitions check failed";
+                success = false;
+            }
+        } else {
+            qWarning() << "DST transitions check failed";
+            success = false;
+        }
+    }
+
+    int monthWeekDst = 0;
+    KCalCore::RecurrenceRule ruleDst;
+    if (success) {
+        ruleDst.setReadOnly(false);
+        ruleDst.setRecurrenceType(RecurrenceRule::rYearly);
+        ruleDst.setFrequency(1);
+        ruleDst.setStartDt(KDateTime(startDst, KDateTime::Spec::UTC()));
+        ruleDst.setBySeconds(QList<int>() << startTimeDst.second());
+        ruleDst.setByMinutes(QList<int>() << startTimeDst.minute());
+        ruleDst.setByHours(QList<int>() << startTimeDst.hour());
+        ruleDst.setByMonths(QList<int>() << startDateDst.month());
+        bool lastWeekDst = false;
+        monthWeekDst = weekOfMonth(startDateDst, lastWeekDst);
+        bool lastWeekDst2 = false;
+        int monthWeekDst2 = weekOfMonth2(startDateDst, lastWeekDst2);
+        if (monthWeekDst != monthWeekDst2 || lastWeekDst2 != lastWeekDst) {
+            qCritical() << "Does not match DST: !!!!!!!!!!!!!!!!!!!";
+            exit(1);
+            return false;
+        }
+        if (monthWeekDst == 5 && lastWeekDst) {
+            monthWeekDst = -1;
+        }
+        ruleDst.setByDays(QList<RecurrenceRule::WDayPos>() <<
+                          RecurrenceRule::WDayPos(monthWeekDst, startDateDst.dayOfWeek()));
+        if (!checkTransitionsForRule(transitions, ruleDst, true,
+                                     monthWeekStd == -1 || !lastWeekStd)) {
+            // Try last-week-of-month rule
+            if (monthWeekDst != -1 && lastWeekDst) {
+                monthWeekDst = -1;
+                ruleDst.setByDays(QList<RecurrenceRule::WDayPos>() <<
+                                  RecurrenceRule::WDayPos(monthWeekDst, startDateDst.dayOfWeek()));
+                if (!checkTransitionsForRule(transitions, ruleDst, true, true)) {
+                    qWarning() << "DST transitions check failed";
+                    success = false;
+                }
+            } else {
+                qWarning() << "DST transitions check failed";
+                success = false;
+            }
+        }
+    }
+
+    if (success) {
+        const int biasStd = phaseStd.utcOffset()/(-60);
+        const int biasDst = phaseDst.utcOffset()/(-60);
+
+        msTimezone.Bias = biasStd;
+        msTimezone.StandardBias = 0;
+        msTimezone.DaylightBias = biasDst - biasStd;
+
+        msTimezone.StandardDate.wYear = 0;
+        msTimezone.StandardDate.wMonth = startDateStd.month();
+        msTimezone.StandardDate.wMilliseconds = startTimeStd.msec();
+        msTimezone.StandardDate.wSecond = startTimeStd.second();
+        msTimezone.StandardDate.wMinute = startTimeStd.minute();
+        msTimezone.StandardDate.wHour = startTimeStd.hour();
+        msTimezone.StandardDate.wDayOfWeek =
+            (startDateStd.dayOfWeek() == 7) ? 0 : startDateStd.dayOfWeek();
+        msTimezone.StandardDate.wDay = (monthWeekStd == -1) ? 5 : monthWeekStd;
+
+        msTimezone.DaylightDate.wYear = 0;
+        msTimezone.DaylightDate.wMonth = startDateDst.month();
+        msTimezone.DaylightDate.wMilliseconds = startTimeDst.msec();
+        msTimezone.DaylightDate.wSecond = startTimeDst.second();
+        msTimezone.DaylightDate.wMinute = startTimeDst.minute();
+        msTimezone.DaylightDate.wHour = startTimeDst.hour();
+        msTimezone.DaylightDate.wDayOfWeek =
+            (startDateDst.dayOfWeek() == 7) ? 0 : startDateDst.dayOfWeek();
+        msTimezone.DaylightDate.wDay = (monthWeekDst == -1) ? 5 : monthWeekDst;
+    }
+
+    return success;
+}
+
+const char *const vCalInfo =
+"BEGIN:VTIMEZONE\n"
+"TZID:Russian Standard Time\n"
+"BEGIN:STANDARD\n"
+"DTSTART:16010101T000000\n"
+"TZOFFSETFROM:+0300\n"
+"TZOFFSETTO:+0300\n"
+"END:STANDARD\n"
+"BEGIN:DAYLIGHT\n"
+"DTSTART:16010101T000000\n"
+"TZOFFSETFROM:+0300\n"
+"TZOFFSETTO:+0300\n"
+"END:DAYLIGHT\n"
+"END:VTIMEZONE\n";
 
 void CalendarTest::test()
 {
+  const QString &original = QString::fromLatin1(vCalInfo);
+  const QStringList &parts = original.split("\n", QString::SkipEmptyParts);
+
+  ICalTimeZoneSource source;
+  const ICalTimeZone &zone = source.parse("name", parts);
+
+  qDebug() << "Info:" << parts;
+  qDebug() << "Zone:" << zone.vtimezone();
+
 #if 0
+  qDebug() << "Time:" << KDateTime::currentUtcDateTime().toString();
+#if 0
+  const KDateTime &time = KDateTime::currentUtcDateTime();
+  qDebug() << "Time2:" << time.isValid();
+
+#if 1
   int n = 0;
   const QStringList &zones = KSystemTimeZones::zones().keys();
   qDebug() << "Number of zones:" << zones.count();
@@ -59,32 +286,43 @@ void CalendarTest::test()
     const bool res = testTimezone(zone);
     if (!res) {
       ++n;
-//      qDebug() << "Zone:" << zone << ":" << (res ? "PASS" : "FAILED");
     }
+    qDebug() << "Zone:" << zone << ":" << (res ? "PASS" : "!!!!!!!!!!!!!!!!!! FAILED !!!!!!!!!!!!!!!!!!");
   }
   qDebug() << "Failed " << n << " from " << zones.count() << " timezones.";
 #else
-  QString timezone = "Pacific/Fiji";
+//  QString timezone = "Pacific/Fiji";
+//  QString timezone = "Europe/Helsinki";
+  QString timezone = "Europe/Moscow";
   bool res = testTimezone(timezone);
-  qDebug() << "Zone: " << timezone << (res ? "PASS" : "FAILED");
+  qDebug() << "Zone: " << timezone << (res ? "PASS" : "!!!!!!!!!!!!!!!!!! FAILED !!!!!!!!!!!!!!!!!!");
+#endif
+
+#else
+  //xxxx
+  const KDateTime &time = KDateTime::currentUtcDateTime();
+  qDebug() << "Time2:" << time.isValid();
+  qDebug() << "Type:" << time.timeSpec().type();
+#endif
 #endif
 }
 
 bool testTimezone(const QString &timezoneName)
 {
-  qDebug() << "Testing:" << timezoneName;
-  // BEGIN: this code is required for linking
-  uuid_t out;
-  uuid_generate_random(out);
-  // END: this code is required for linking
+//  qDebug() << "Testing:" << timezoneName;
 
-#if 1
   const KTimeZone &timezone = KSystemTimeZones::readZone(timezoneName);
   KDateTime next = KDateTime::currentUtcDateTime();
   const QList<KTimeZone::Transition> &transitions = timezone.transitions(next.toUtc().dateTime());
-//  qDebug() << "Number of transitions:" << transitions.count();
+//  transitions.removeAt(0);
+//  transitions.removeAt(0);
+
+  MSTimeZone msTimezone;
+  const bool res = checkTransitions(transitions, msTimezone);
+  return res;
+#if 0
   if (transitions.isEmpty()) {
-//    qDebug() << "1";
+    // No transitions, this is ok
     return true;
   }
   if (transitions.length() < 2) {
@@ -96,15 +334,16 @@ bool testTimezone(const QString &timezoneName)
   const KTimeZone::Phase &_phase1 = _transition1.phase();
   const KTimeZone::Phase &_phase2 = _transition2.phase();
   if ((_phase1.isDst() && _phase2.isDst()) || (!_phase1.isDst() && !_phase2.isDst())) {
-    qDebug() << "2";
+    qDebug() << "Missmatch phases";
     return false;
   }
   // STD
-  const KTimeZone::Phase &phase1 = (!_phase1.isDst()) ? _phase1 : _phase2;
-  const QDateTime &time1 = (!_phase1.isDst()) ? _transition1.time() : _transition2.time();
+//  const KTimeZone::Phase &phase1 = (!_phase1.isDst()) ? _phase1 : _phase2;
+  const QDateTime &timeStd = (!_phase1.isDst()) ? _transition1.time() : _transition2.time();
   // DST
-  const KTimeZone::Phase &phase2 = ( _phase2.isDst()) ? _phase2 : _phase1;
-  const QDateTime &time2 = ( _phase2.isDst()) ? _transition2.time() : _transition1.time();
+//  const KTimeZone::Phase &phase2 = ( _phase2.isDst()) ? _phase2 : _phase1;
+  const QDateTime &timeDst = ( _phase2.isDst()) ? _transition2.time() : _transition1.time();
+  qDebug() << "Times:" << timeStd << timeDst;
 
   KCalCore::RecurrenceRule recurrence;
   recurrence.setReadOnly(false);
@@ -112,125 +351,108 @@ bool testTimezone(const QString &timezoneName)
   recurrence.setFrequency(1);
   recurrence.setStartDt(next);
   recurrence.setBySeconds(QList<int>() << 0);
-  recurrence.setByMinutes(QList<int>() << time1.time().minute());
-  recurrence.setByHours(QList<int>() << time1.time().hour());
-  recurrence.setByMonths(QList<int>() << time1.date().month());
-//  int weekNumber1 = time1.date().weekNumber();
-  bool isLast1 = false;
-  int weekNumber1 = weekOfMonth(time1.date(), isLast1);
-//  if (weekNumber1 == 4 || weekNumber1 == 5) {
-//  if (isLast1) {
-//    weekNumber1 = -1;
-//  }
-//  }
-  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber1, time1.date().dayOfWeek()));
+  recurrence.setByMinutes(QList<int>() << timeStd.time().minute());
+  recurrence.setByHours(QList<int>() << timeStd.time().hour());
+  recurrence.setByMonths(QList<int>() << timeStd.date().month());
+//  int weekNumber1 = timeStd.date().weekNumber();
+  bool isLastStd = false;
+  int weekNumber1 = weekOfMonth(timeStd.date(), isLastStd);
+  recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber1, timeStd.date().dayOfWeek()));
 
-  KDateTime next2 = next;
-  KCalCore::RecurrenceRule recurrence2;
-  recurrence2.setReadOnly(false);
-  recurrence2.setRecurrenceType(RecurrenceRule::rYearly);
-  recurrence2.setFrequency(1);
-  recurrence2.setStartDt(next);
-  recurrence2.setBySeconds(QList<int>() << 0);
-  recurrence2.setByMinutes(QList<int>() << time2.time().minute());
-  recurrence2.setByHours(QList<int>() << time2.time().hour());
-  recurrence2.setByMonths(QList<int>() << time2.date().month());
-//  int weekNumber2 = time2.date().weekNumber();
-  bool isLast2 = false;
-  int weekNumber2 = weekOfMonth(time2.date(), isLast2);
-//  if (weekNumber2 == 4 || weekNumber2 == 5) {
-//  if (isLast2) {
-//    weekNumber2 = -1;
-//  }
-  recurrence2.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber2, time2.date().dayOfWeek()));
+  KCalCore::RecurrenceRule recurrenceDst;
+  recurrenceDst.setReadOnly(false);
+  recurrenceDst.setRecurrenceType(RecurrenceRule::rYearly);
+  recurrenceDst.setFrequency(1);
+  recurrenceDst.setStartDt(next);
+  recurrenceDst.setBySeconds(QList<int>() << 0);
+  recurrenceDst.setByMinutes(QList<int>() << timeDst.time().minute());
+  recurrenceDst.setByHours(QList<int>() << timeDst.time().hour());
+  recurrenceDst.setByMonths(QList<int>() << timeDst.date().month());
+  bool isLastDst = false;
+  int weekNumber2 = weekOfMonth(timeDst.date(), isLastDst);
+  recurrenceDst.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber2, timeDst.date().dayOfWeek()));
 
-  bool result1 = true;
-  bool result2 = true;
+  bool resultStd = true;
+  bool resultDst = true;
+  KDateTime nextStd = KDateTime::currentUtcDateTime();
+  KDateTime nextDst = nextStd;
   foreach (const KTimeZone::Transition &transition, transitions) {
     const KTimeZone::Phase &phase = transition.phase();
+    qDebug() << "Time:" << transition.time();
     if (phase.isDst()) {
-      next2 = recurrence2.getNextDate(next2);
-      if (transition.time() != next2.dateTime()) {
+      nextDst = recurrenceDst.getNextDate(nextDst);
+      if (transition.time() != nextDst.dateTime()) {
         qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
         qDebug() << ">>> Time1:" << transition.time();
-        qDebug() << ">>> Time2:" << next2.dateTime();
+        qDebug() << ">>> Time2:" << nextDst.dateTime();
         qDebug() << ">>> Phase isDst:" << phase.isDst();
-//        qDebug() << ">>> Phase offset:" << phase.utcOffset();
-//        qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
-//        qDebug() << ">>> Phase comment:" << phase.comment();
-        result1 = false;
-      } else {
-//        qDebug() << "Match:" << next2.dateTime();
+        resultDst = false;
       }
     } else {
-      next = recurrence.getNextDate(next);
-      if (transition.time() != next.dateTime()) {
+      nextStd = recurrence.getNextDate(nextStd);
+      if (transition.time() != nextStd.dateTime()) {
         qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
         qDebug() << ">>> Time1:" << transition.time();
-        qDebug() << ">>> Time2:" << next.dateTime();
+        qDebug() << ">>> Time2:" << nextStd.dateTime();
         qDebug() << ">>> Phase isDst:" << phase.isDst();
-//        qDebug() << ">>> Phase offset:" << phase.utcOffset();
-//        qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
-//        qDebug() << ">>> Phase comment:" << phase.comment();
-        result2 = false;
-      } else {
-//        qDebug() << "Match:" << next.dateTime();
+        resultStd = false;
       }
     }
   }
-  if (result1 && result2) {
+  if (resultStd && resultDst) {
     return true;
   }
 
-  if (result2 && isLast1) {
+  if (resultStd && isLastStd) {
     qDebug() << "Reset 1";
     weekNumber1 = -1;
-    recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber1, time1.date().dayOfWeek()));
+    recurrence.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber1, timeStd.date().dayOfWeek()));
   }
-  if (result1 && isLast2) {
+  if (resultDst && isLastDst) {
     qDebug() << "Reset 2";
     weekNumber2 = -1;
-    recurrence2.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber2, time2.date().dayOfWeek()));
+    recurrenceDst.setByDays(QList<RecurrenceRule::WDayPos>() << RecurrenceRule::WDayPos(weekNumber2, timeDst.date().dayOfWeek()));
   }
 
-  result1 = true;
-  result2 = true;
-  next = KDateTime::currentUtcDateTime();
-  next2 = KDateTime::currentUtcDateTime();
+  resultStd = true;
+  resultDst = true;
+  nextStd = KDateTime::currentUtcDateTime();
+  nextDst = KDateTime::currentUtcDateTime();
   foreach (const KTimeZone::Transition &transition, transitions) {
     const KTimeZone::Phase &phase = transition.phase();
     if (phase.isDst()) {
-      next2 = recurrence2.getNextDate(next2);
-      if (transition.time() != next2.dateTime()) {
+      nextDst = recurrenceDst.getNextDate(nextDst);
+      if (transition.time() != nextDst.dateTime()) {
         qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
         qDebug() << ">>> Time1 (real):" << transition.time();
-        qDebug() << ">>> Time2 (rule):" << next2.dateTime();
+        qDebug() << ">>> Time2 (rule):" << nextDst.dateTime();
         qDebug() << ">>> Phase isDst:" << phase.isDst();
         qDebug() << ">>> Phase offset:" << phase.utcOffset();
         qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
         qDebug() << ">>> Phase comment:" << phase.comment();
-        result1 = false;
+        resultDst = false;
       }
     } else {
-      next = recurrence.getNextDate(next);
-      if (transition.time() != next.dateTime()) {
+      nextStd = recurrence.getNextDate(nextStd);
+      if (transition.time() != nextStd.dateTime()) {
         qDebug() << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NO MATCH!!!";
         qDebug() << ">>> Time1 (real):" << transition.time();
-        qDebug() << ">>> Time2 (rule):" << next.dateTime();
+        qDebug() << ">>> Time2 (rule):" << nextStd.dateTime();
         qDebug() << ">>> Phase isDst:" << phase.isDst();
         qDebug() << ">>> Phase offset:" << phase.utcOffset();
         qDebug() << ">>> Phase abbreviations:" << phase.abbreviations();
         qDebug() << ">>> Phase comment:" << phase.comment();
-        result2 = false;
+        resultStd = false;
       }
     }
   }
 
-  return result1 && result2;
-#endif // Playing with transitions
+  return resultStd && resultDst;
+#endif
 }
 
 /*
+Russia:
 00000000  4c ff ff ff                                         | Bias (4 bytes)
 00000004  28 00 55 00  54 00 43 00  2b 00 30 00  34 00 3a 00  | StandardName (64 bytes)
 00000014  30 00 30 00  29 00 20 00  4d 00 6f 00  73 00 63 00  |
@@ -285,4 +507,10 @@ void CalendarTest::testRule()
   const QString &ruleString = format.toString(&rule);
 
   qDebug() << "RRule:" << ruleString;
+}
+
+void CalendarTest::init()
+{
+  uuid_t out;
+  uuid_generate_random(out);
 }
