@@ -24,13 +24,17 @@ void initTestMsTimezone(MSTimeZone &msTimezone);
 
 void CalendarTest::test()
 {
+  ICalTimeZones zones;
+
   MSTimeZone msTimezone;
   initTestMsTimezone(msTimezone);
 
   ICalTimeZoneSource source;
-  const ICalTimeZone &zone = source.parse(&msTimezone);
+  const ICalTimeZone &zone1 = source.parse(&msTimezone, zones);
+  const ICalTimeZone &zone2 = source.parse(&msTimezone, zones);
 
-  qDebug() << "Zone:" << zone.vtimezone();
+  qDebug() << "Zone 1:" << zone1.vtimezone();
+  qDebug() << "Zone 2:" << zone2.vtimezone();
 }
 
 void CalendarTest::init()
