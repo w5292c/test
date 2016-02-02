@@ -26,6 +26,7 @@
 
 #include "utils.h"
 
+#include "mosq.h"
 #include "masn1.h"
 #include "another.h"
 #include "sqltest.h"
@@ -120,6 +121,9 @@ int main(int argc, char **argv)
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "asn1")) {
     test_asn1();
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "mosq")) {
+    test_mosq();
     return 0;
   }
 

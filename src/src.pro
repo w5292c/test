@@ -14,6 +14,8 @@ PKGCONFIG += \
   sqlite3 \
   libcrypto
 
+LIBS += -lmosquitto
+
 QT += network
 QT -= gui
 
@@ -26,7 +28,8 @@ HEADERS += \
   calendar.h \
   bintoold.h \
   sqltest.h \
-  masn1.h
+  masn1.h \
+  mosq.h
 
 SOURCES += \
   main.cpp \
@@ -36,4 +39,5 @@ SOURCES += \
   calendar.cpp \
   bintoold.cpp \
   sqltest.cpp \
-  masn1.c
+  masn1.c \
+  mosq.c
