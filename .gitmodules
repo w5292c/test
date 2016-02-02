@@ -1,0 +1,3 @@
+[submodule "external/jsmn"]
+	path = external/jsmn
+	url = https://github.com/zserge/jsmn.git
