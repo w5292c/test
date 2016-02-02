@@ -6,6 +6,7 @@
 #include <string.h>
 #include <mosquitto.h>
 
+#ifdef MOSQ_MAIN
 int main(int argc, char **argv)
 {
   (void)argc;
@@ -13,6 +14,7 @@ int main(int argc, char **argv)
   test_mosq();
   return 0;
 }
+#endif /* MOSQ_MAIN */
 
 static bool quit_request = false;
 
