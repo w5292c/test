@@ -11,7 +11,8 @@ PKGCONFIG += \
   libkcalcoren-qt5 \
   uuid \
   libical \
-  sqlite3
+  sqlite3 \
+  libcrypto
 
 QT += network
 QT -= gui
@@ -24,7 +25,8 @@ HEADERS += \
   another.h \
   calendar.h \
   bintoold.h \
-  sqltest.h
+  sqltest.h \
+  masn1.h
 
 SOURCES += \
   main.cpp \
@@ -33,4 +35,5 @@ SOURCES += \
   another.cpp \
   calendar.cpp \
   bintoold.cpp \
-  sqltest.cpp
+  sqltest.cpp \
+  masn1.c

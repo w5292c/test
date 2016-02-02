@@ -25,6 +25,8 @@
 #include "testbase.h"
 
 #include "utils.h"
+
+#include "masn1.h"
 #include "another.h"
 #include "sqltest.h"
 #include "calendar.h"
@@ -112,10 +114,19 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "sql")) {
     test_sql();
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "sql")) {
+    TestBase testObject;
+
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "asn1")) {
+    test_asn1();
+    return 0;
   }
 
 
-  TestBase test;
+  TestBase *test = new TestBase();
+
+#if 0
 
 #if 0 // Base64 encoding test
   const WB_UTINY TheData[] = {
@@ -238,8 +249,11 @@ int main(int argc, char **argv)
   const WBXMLError createdWbxmlResult = wbxml_tree_to_wbxml(createdTree, &createdWbxml, &createdWbxmlLen, &gparams);
   qDebug() << "Result: " << (const char *)wbxml_errors_string(createdWbxmlResult) << ", length: " << createdWbxmlLen;
   Utils::hexDump(createdWbxml, createdWbxmlLen);
+#endif
 
   qDebug() << "********************************************************************************************";
 
-  return app.exec();
+  int rrr = app.exec();
+  delete test;
+  return rrr;
 }

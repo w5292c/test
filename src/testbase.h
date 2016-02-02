@@ -70,6 +70,7 @@ public slots:
   void start(IndexId indexId);
   void onOptionsRequestReady();
   void onRequestReady(QNetworkReply *reply);
+  void onSslErrors(QList<QSslError> errors);
   void authentication(QNetworkReply *reply, QAuthenticator *authenticator);
 
 Q_SIGNALS:

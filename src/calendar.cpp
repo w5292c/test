@@ -25,6 +25,9 @@ void initTestMsTimezone(MSTimeZone &msTimezone, int variant);
 
 void CalendarTest::test()
 {
+  QDateTime dt(QDate(2015, 1, 16), QTime(10, 15, 30), Qt::UTC);
+  qDebug() << "Test:" << dt.toString(Qt::ISODate);
+#if 0
   ICalTimeZones zones;
 
   MSTimeZone msTimezone;
@@ -81,6 +84,7 @@ void CalendarTest::test()
   } else {
     qCritical() << "Failed to convert";
   }
+#endif
 }
 
 void CalendarTest::init()

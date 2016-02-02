@@ -35,6 +35,7 @@
 #include <QNetworkRequest>
 #include <QCoreApplication>
 #include <QProcessEnvironment>
+#include <QNetworkProxy>
 
 /*!
     \class TestBase
@@ -65,16 +66,24 @@ const QLatin1String folderSyncSuffix("/Microsoft-Server-ActiveSync?Cmd=FolderSyn
 */
 TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone), m_reply(NULL)
 {
+  QCoreApplication::quit();
+
   mTags.push(0x1020);
   mTags.push(0x2030);
   mTags.push(0x3040);
   mTags.push(0x4050);
   mTags.push(0x5061);
 
+  QNetworkProxy proxy;
+  proxy.setType(QNetworkProxy::HttpProxy);
+  proxy.setHostName("10.13.11.4");
+  proxy.setPort(8080);
+  QNetworkProxy::setApplicationProxy(proxy);
+
   connect(this, SIGNAL(testignal(IndexId)), this, SLOT(start(IndexId)));
 
   m_timer.setSingleShot(false);
-  m_timer.setInterval(200);
+  m_timer.setInterval(500);
   connect(&m_timer, SIGNAL(timeout()), this, SLOT(onTimer()));
   m_timer.start();
 
@@ -172,8 +181,23 @@ void TestBase::sendRequest()
 
   if (!m_reply) {
     QNetworkRequest request(serverUrl);
+    request.setHeader(QNetworkRequest::UserAgentHeader, "curl/7.35.0");
+//    request.setRawHeader("Host", "mobile.ur.ch:443");
+    request.setRawHeader("Proxy-Connection", "Keep-Alive");
+//    QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
+//    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+//    request.setSslConfiguration(sslConfig);
+
+#if 0
+    > CONNECT office.mailbox.org:443 HTTP/1.1
+    > Host: office.mailbox.org:443
+    > User-Agent: curl/7.35.0
+    > Proxy-Connection: Keep-Alive
+#endif
+
     m_reply = m_manager.sendCustomRequest(request, "OPTIONS");
     connect(m_reply, SIGNAL(finished()), this, SLOT(onOptionsRequestReady()));
+    connect(m_reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
   }
 }
 
@@ -190,15 +214,23 @@ void TestBase::onRequestReady(QNetworkReply *reply)
 
 void TestBase::onOptionsRequestReady()
 {
-  qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolVersions:" << m_reply->rawHeader(PROTOCOL_VERSIONS_HEADER).split(',');
-  QByteArray emptyBytes = "14.1";
-  QList<QByteArray> emptyResult = emptyBytes.split(',');
-  qDebug() << "[TestBase::onOptionsRequestReady] empty:" << emptyResult.size() << ", " << emptyResult;
+  qDebug() << "Error:" << m_reply->error();
+  qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolVersions:" << m_reply->rawHeader(PROTOCOL_VERSIONS_HEADER)/*.split(',')*/;
+//  QByteArray emptyBytes = "14.1";
+//  QList<QByteArray> emptyResult = emptyBytes.split(',');
+//  qDebug() << "[TestBase::onOptionsRequestReady] empty:" << emptyResult.size() << ", " << emptyResult;
   qDebug() << "[TestBase::onOptionsRequestReady] MS-ASProtocolCommands:" << m_reply->rawHeader(PROTOCOL_COMMANDS_HEADER);
+  qDebug() << "[TestBase::onOptionsRequestReady] Headers:" << m_reply->rawHeaderPairs();
   delete m_reply;
   m_reply = NULL;
 
-  sendFolderSyncRequest();
+//  sendFolderSyncRequest();
+  qDebug() << "****************************** SYNC ******************************";
+}
+
+void TestBase::onSslErrors(QList<QSslError> errors)
+{
+  qDebug() << "TestBase::onSslErrors: " << errors.count();
 }
 
 void TestBase::sendFolderSyncRequest()
@@ -221,6 +253,9 @@ void TestBase::sendFolderSyncRequest()
     request.setRawHeader("MS-ASProtocolVersion", "14.1");
     request.setRawHeader("User-Agent", "ASOM");
     request.setRawHeader("Host", serverAddress.toLatin1());
+    const QString &userName = env.value("MY_USER");
+    const QString &passWord = env.value("MY_PASS");
+    request.setRawHeader("Authorization", "Basic " + QByteArray(QString("%1:%2").arg(userName + "123").arg(passWord + "321").toLatin1()).toBase64());
     m_reply = m_manager.post(request, &buffer);
     connect(m_reply, SIGNAL(finished()), this, SLOT(onFolderSyncReady()));
   }
@@ -228,6 +263,7 @@ void TestBase::sendFolderSyncRequest()
 
 void TestBase::onFolderSyncReady()
 {
+  qDebug() << "[TestBase::onFolderSyncReady]: error: " << m_reply->error();
   qDebug() << "[TestBase::onFolderSyncReady]: headers: " << m_reply->rawHeaderPairs();
   const QByteArray &bytes = m_reply->readAll();
   Utils::hexDump((const unsigned char *)bytes.data(), bytes.size());
