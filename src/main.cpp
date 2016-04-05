@@ -36,6 +36,7 @@
 #include <QDir>
 #include <QMap>
 #include <QDebug>
+#include <time.h>
 #include <wbxml.h>
 #include <string.h>
 #include <wbxml_conv.h>
@@ -125,8 +126,22 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "mosq")) {
     test_mosq();
     return 0;
-  }
+  } else if (2 == argc && !strcmp(argv[1], "systime")) {
+    struct timespec time = {0};
 
+    if (clock_getres(CLOCK_MONOTONIC, &time)) {
+      fprintf(stderr, "Error: cannot get resolution\n");
+      return -1;
+    }
+    fprintf(stdout, "Got time resolution: %lld secs, %ld nsecs\n", (long long)time.tv_sec, time.tv_nsec);
+    if (clock_gettime(CLOCK_MONOTONIC, &time)) {
+      fprintf(stderr, "Error: cannot get time\n");
+      return -1;
+    }
+    fprintf(stdout, "Got time: %lld secs, %ld nsecs\n", (long long)time.tv_sec, time.tv_nsec);
+
+    return 0;
+  }
 
   TestBase *test = new TestBase();
 
