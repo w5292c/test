@@ -40,6 +40,8 @@
 #include <wbxml.h>
 #include <string.h>
 #include <wbxml_conv.h>
+#include <sys/time.h>
+#include <stdint.h>
 
 #include <QDateTime>
 #include <QCoreApplication>
@@ -140,6 +142,12 @@ int main(int argc, char **argv)
     }
     fprintf(stdout, "Got time: %lld secs, %ld nsecs\n", (long long)time.tv_sec, time.tv_nsec);
 
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "timeofday")) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    const uint64_t n = (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec/1000;
+    printf("Here is the value: %llu\n", n);
     return 0;
   }
 
