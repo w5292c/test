@@ -43,13 +43,13 @@ void test_mosq(void)
     return;
   }
 
-  struct mosquitto *mosquitto = mosquitto_new("eee5bb237f8a16d61621036f2edb246c8ec94480", NULL);
+  struct mosquitto *mosquitto = mosquitto_new("eee5bb237f8a16d61621036f2edb246c8ec94480", true, NULL);
   if (!mosquitto) {
     fprintf(stderr, "Error: failed creating mosquitto instance\n");
     goto cleanup;
   }
 
-  const int connect_result = mosquitto_connect(mosquitto, "localhost", 1234, 30, false);
+  const int connect_result = mosquitto_connect(mosquitto, "localhost", 1234, false);
   fprintf(stdout, "Connected: %d\n", connect_result);
   if (MOSQ_ERR_SUCCESS != connect_result) {
     fprintf(stderr, "Error: %s\n", strerror(errno));
@@ -64,7 +64,7 @@ void test_mosq(void)
   mosquitto_message_callback_set(mosquitto, on_message);
 
   while (!quit_request) {
-    const int loop_result = mosquitto_loop(mosquitto, 500);
+    const int loop_result = mosquitto_loop(mosquitto, 500, 10);
     if (MOSQ_ERR_SUCCESS != loop_result) {
       fprintf(stderr, "Error: loop failed, code: %d\n", loop_result);
       break;

@@ -2,6 +2,7 @@
 
 #include <QFile>
 #include <QDebug>
+#include <QDataStream>
 
 void Bin::test()
 {
