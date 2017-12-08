@@ -27,7 +27,7 @@ void CalendarTest::test()
 {
   QDateTime dt(QDate(2015, 1, 16), QTime(10, 15, 30), Qt::UTC);
   qDebug() << "Test:" << dt.toString(Qt::ISODate);
-#if 0
+#if 1
   ICalTimeZones zones;
 
   MSTimeZone msTimezone;
@@ -91,6 +91,38 @@ void CalendarTest::init()
 {
   uuid_t out;
   uuid_generate_random(out);
+}
+
+void CalendarTest::icalTest()
+{
+  MSTimeZone timezoneInfo;
+  timezoneInfo.Bias = 180;
+  timezoneInfo.StandardBias = 0;
+  timezoneInfo.DaylightBias = 0;
+  memset(&timezoneInfo.StandardDate, 0, sizeof (timezoneInfo.StandardDate));
+  memset(&timezoneInfo.DaylightDate, 0, sizeof (timezoneInfo.DaylightDate));
+
+  ICalTimeZoneSource source;
+  const ICalTimeZone &timezone = source.parse(&timezoneInfo);
+  KDateTime::Spec timezoneSpec;
+  timezoneSpec.setType(timezone);
+
+
+  KDateTime::Spec clockSpec(KDateTime::ClockTime);
+  KDateTime::Spec localSpec(KDateTime::LocalZone);
+
+  KCalCore::Event::Ptr event(new KCalCore::Event);
+  event->setSchedulingID("ffffffff-ffff-1234-5678-22d38f61a45f");
+  event->setLocation("Test location A1");
+  event->setStatus(KCalCore::Incidence::StatusConfirmed);
+  event->setDtStart(KDateTime::fromString("20171208T100000Z").toTimeSpec(localSpec));
+
+  ICalFormat icf;
+  const QString &ical = icf.createScheduleMessage(event, iTIPReply);
+  qDebug() << "Here is the iCalendar data:" << endl
+           << "********************************************************************************" << endl
+           << (const char *)ical.toLatin1().data()
+           << "\r********************************************************************************";
 }
 
 namespace {
