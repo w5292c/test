@@ -116,6 +116,27 @@ void CalendarTest::icalTest()
   event->setLocation("Test location A1");
   event->setStatus(KCalCore::Incidence::StatusConfirmed);
   event->setDtStart(KDateTime::fromString("20171208T100000Z").toTimeSpec(localSpec));
+  event->setDtEnd(KDateTime::fromString("20171208T103000Z").toTimeSpec(localSpec));
+  event->setCreated(KDateTime::fromString("20171207T103011").toTimeSpec(localSpec));
+  event->addComment("Test comment for test event A1");
+  event->setSummary("Here is some summary for test event A1", false);
+  event->setPriority(5);
+  event->setTransparency(KCalCore::Event::Opaque);
+  event->setRevision(1);
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-APPT-SEQUENCE", "0");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-BUSYSTATUS", "BUSY");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-IMPORTANCE", "1");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-INSTTYPE", "0");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-DISALLOW-COUNTER", "FALSE");
+
+  KCalCore::Attendee::Ptr attendee(new KCalCore::Attendee(
+    "Test Name", "test.email@example.org",
+    true,
+    KCalCore::Attendee::Tentative,
+    KCalCore::Attendee::ReqParticipant));
+  event->addAttendee(attendee);
 
   ICalFormat icf;
   const QString &ical = icf.createScheduleMessage(event, iTIPReply);
