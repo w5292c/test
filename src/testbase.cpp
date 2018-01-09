@@ -30,6 +30,8 @@
 #include <QDebug>
 #include <wbxml.h>
 #include <QBuffer>
+#include <stdint.h>
+#include <QUrlQuery>
 #include <QMetaEnum>
 #include <QNetworkReply>
 #include <QAuthenticator>
@@ -59,6 +61,7 @@
 namespace {
 const char *const PROTOCOL_VERSIONS_HEADER = "MS-ASProtocolVersions";
 const char *const PROTOCOL_COMMANDS_HEADER = "MS-ASProtocolCommands";
+const QLatin1String sendMailSuffix("/Microsoft-Server-ActiveSync?Cmd=SendMail&User=fakeuser&DeviceId=v140Device&DeviceType=SmartPhone");
 const QLatin1String folderSyncSuffix("/Microsoft-Server-ActiveSync?Cmd=FolderSync&User=fakeuser&DeviceId=v140Device&DeviceType=SmartPhone");
 }
 
@@ -176,8 +179,10 @@ void TestBase::sendEmail()
   const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
   const QString &serverAddress = env.value("MY_ADDR", "exchange-server.com");
   const QString &serverPort = env.value("MY_PORT", "443");
-  const QUrl &serverUrl = QUrl(QLatin1String("https://") + serverAddress + ":" + serverPort + "/Microsoft-Server-ActiveSync");
-  const QByteArray &mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <alexander.chumakov@harman.com>").toUtf8();
+  const QUrl &serverUrl = QUrl(QLatin1String("https://") + serverAddress + ":" + serverPort + sendMailSuffix);
+  const QString &userName = env.value("MY_USER");
+  const QString &passWord = env.value("MY_PASS");
+  const QByteArray &mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
 
   QByteArray wbxmlBuffer;
 
@@ -189,35 +194,48 @@ void TestBase::sendEmail()
   wbxmlBuffer.append("\x45", 1);
   /* <ClientId> */
   wbxmlBuffer.append("\x51\x03", 2);
-  wbxmlBuffer.append("4677234947143296961493484255641831");
+  wbxmlBuffer.append("4677234947143296961493484255641839");
   /* </ClientId> */
   wbxmlBuffer.append("\x00\x01", 2);
   /* <SaveInSentItems /> */
   wbxmlBuffer.append("\x08", 1);
   /* <Mime> */
   wbxmlBuffer.append("\x50\xC3", 2);
-  wbxmlBuffer.append(mime.length());
+  uint16_t length = mime.length();
+  length = (length & 0x7FU) | ((length & 0x3F80) << 1);
+  wbxmlBuffer.append(0x80u | (length >> 8));
+  wbxmlBuffer.append(length);
+//  wbxmlBuffer.append(mime.length());
   wbxmlBuffer.append(mime);
   /* </Mime> */
-  wbxmlBuffer.append("\x00\x01", 2);
+  wbxmlBuffer.append("\x01", 1);
   /* </SendMail> */
   wbxmlBuffer.append("\x01", 1);
 
-  if (!m_reply) {
-    static QBuffer buffer;
-    buffer.setData(wbxmlBuffer);
-
-    QNetworkRequest request(serverUrl);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/vnd.ms-sync.wbxml");
-    request.setRawHeader("MS-ASProtocolVersion", "14.0");
-    request.setRawHeader("User-Agent", "ASOM");
-    request.setRawHeader("Host", serverAddress.toLatin1());
-    const QString &userName = env.value("MY_USER");
-    const QString &passWord = env.value("MY_PASS");
-    request.setRawHeader("Authorization", "Basic " + QByteArray(QString("%1:%2").arg(userName + "123").arg(passWord + "321").toLatin1()).toBase64());
-    m_reply = m_manager.post(request, &buffer);
-    connect(m_reply, SIGNAL(finished()), this, SLOT(onSendMailReady()));
+  if (m_reply) {
+    qDebug() << "Already have the outstanding network request";
+    return;
   }
+  qDebug() << "MIME length: " << mime.length();
+  qDebug() << "Request dump:";
+  Utils::hexDump((const unsigned char *)wbxmlBuffer.data(), wbxmlBuffer.size());
+
+  static QBuffer buffer;
+  buffer.setData(wbxmlBuffer);
+
+/*  QUrlQuery query;
+  query.addQueryItem("Cmd", "SendMail");
+  query.addQueryItem("User", userName);
+  query.addQueryItem("DeviceId", "");*/
+
+  QNetworkRequest request(serverUrl);
+  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/vnd.ms-sync.wbxml");
+  request.setRawHeader("MS-ASProtocolVersion", "14.0");
+  request.setRawHeader("User-Agent", "ASOM");
+  request.setRawHeader("Host", serverAddress.toLatin1());
+  request.setRawHeader("Authorization", "Basic " + QByteArray(QString("%1:%2").arg(userName + "123").arg(passWord + "321").toLatin1()).toBase64());
+  m_reply = m_manager.post(request, &buffer);
+  connect(m_reply, SIGNAL(finished()), this, SLOT(onSendMailReady()));
 }
 
 void TestBase::sendRequest()
