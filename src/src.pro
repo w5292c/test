@@ -29,7 +29,8 @@ HEADERS += \
   bintoold.h \
   sqltest.h \
   masn1.h \
-  mosq.h
+  mosq.h \
+  testdata.h
 
 SOURCES += \
   main.cpp \
@@ -40,4 +41,5 @@ SOURCES += \
   bintoold.cpp \
   sqltest.cpp \
   masn1.c \
-  mosq.c
+  mosq.c \
+  testdata.cpp

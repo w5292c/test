@@ -1,0 +1,101 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 Alexander Chumakov
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include "testdata.h"
+
+QString Data::testMime(const QString &from, const QString &to)
+{
+  return QString(
+    "From: %1\r\n"
+    "To: %2\r\n"
+    "Subject: Test subject OA0.0001\r\n"
+    "Content-Type: multipart/alternative;\r\n"
+    "	boundary=\"_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\"\r\n"
+    "MIME-Version: 1.0\r\n"
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
+    "Content-Type: text/plain; charset=\"iso-8859-1\"\r\n"
+    "Content-Transfer-Encoding: quoted-printable\r\n"
+    "\r\n"
+    "Test body for OA0.0001\r\n"
+    "\r\n"
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
+    "Content-Type: text/html; charset=\"iso-8859-1\"\r\n"
+    "Content-Transfer-Encoding: quoted-printable\r\n"
+    "\r\n"
+    "<html>\r\n"
+    "<head>\r\n"
+    "</head>\r\n"
+    "<body>\r\n"
+    "<div>Test body for OA0.0001</div>\r\n"
+    "</body>\r\n"
+    "</html>\r\n"
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n").arg(from).arg(to);
+}
+
+#if 0
+Content-Type: text/calendar; charset="utf-8"; method=REQUEST
+Content-Transfer-Encoding: base64
+X-Microsoft-Exchange-Diagnostics:
+	1;AM4PR0901MB1330;27:qg9AUDHUlw5hkTFYEGk2ApBBvd5yXmwrT+S0+9c7ub0ncH2iod80JYOdlFUMHLnx/wvBWRTojQTHBCckQunO+yHkOQh8lkMFeVaLqOdIRxAso21ozOx8Dez9S8cVEzOx
+X-Microsoft-Antispam-Mailbox-Delivery:
+	abwl:0;wl:0;pcwl:0;kl:0;iwl:0;ijl:0;dwl:0;dkl:0;rwl:0;ex:0;auth:1;dest:I;ENG:(400001000128)(400125000095)(5062000261)(5061607266)(5061608174)(4900095)(4920089)(6515079)(4950112)(4990090)(400001001318)(400125100095)(61617190)(400001002128)(400125200095);
+X-Message-Info:
+	5vMbyqxGkddhh69sIkKp9jHxVITY9Gctl7hvCJHJjryyIxouOmeoUzPMD1y/fU9d3FN9siZtnONYN8lxHMQGjQJBorNMemQVCNrXzmtf9TtxbKIFajb696FiGlNc7IpuowypSyx8TD9RRl16hK4fo8fxXbWhdTgQOH9e6dd2/njkhDiGPGvpuupsomYsfhWOJj5oLMCc8ZUiq258MCqlnw==
+X-Message-Delivery: Vj0xLjE7dXM9MDtsPTA7YT0xO0Q9MTtHRD0xO1NDTD0z
+X-Microsoft-Antispam-Message-Info:
+	//OOoZvq/qH2YrX6psU00FzEz3ERGkaAWJ48TsTKb8ZhBpWHvS290HxzT9du7wWZtoXpb2aHWmsYbLYBYm43DDANaROOB9+NdgyNi/Ng/W2Iatd/oJ/BTtj7EmrXXP+Sx3amrcGk9Ih1paBbtGJZ+m91AWTbqjXEORnenpjpBu3J/UpainmD8FkLetBfQ1OfwZ3gKgj5+b9unLempv29X0QyFVsDJQemO5C423f1Itoxaatv/mXT3a8FoQ7WhxlxHsTHPyUPkJYTuNUQ8tHezg==
+
+QkVHSU46VkNBTEVOREFSDQpNRVRIT0Q6UkVRVUVTVA0KUFJPRElEOk1pY3Jvc29mdCBFeGNoYW5n
+ZSBTZXJ2ZXIgMjAxMA0KVkVSU0lPTjoyLjANCkJFR0lOOlZUSU1FWk9ORQ0KVFpJRDpSdXNzaWFu
+IFN0YW5kYXJkIFRpbWUNCkJFR0lOOlNUQU5EQVJEDQpEVFNUQVJUOjE2MDEwMTAxVDAwMDAwMA0K
+VFpPRkZTRVRGUk9NOiswMzAwDQpUWk9GRlNFVFRPOiswMzAwDQpFTkQ6U1RBTkRBUkQNCkJFR0lO
+OkRBWUxJR0hUDQpEVFNUQVJUOjE2MDEwMTAxVDAwMDAwMA0KVFpPRkZTRVRGUk9NOiswMzAwDQpU
+Wk9GRlNFVFRPOiswMzAwDQpFTkQ6REFZTElHSFQNCkVORDpWVElNRVpPTkUNCkJFR0lOOlZFVkVO
+VA0KT1JHQU5JWkVSO0NOPSJDaHVtYWtvdiwgQWxleGFuZGVyIjpNQUlMVE86QWxleGFuZGVyLkNo
+dW1ha292QGhhcm1hbi5jb20NCkFUVEVOREVFO1JPTEU9UkVRLVBBUlRJQ0lQQU5UO1BBUlRTVEFU
+PU5FRURTLUFDVElPTjtSU1ZQPVRSVUU7Q049dzUyOTJjQG91dA0KIGxvb2suY29tOk1BSUxUTzp3
+NTI5MmNAb3V0bG9vay5jb20NCkFUVEVOREVFO1JPTEU9UkVRLVBBUlRJQ0lQQU5UO1BBUlRTVEFU
+PU5FRURTLUFDVElPTjtSU1ZQPVRSVUU7Q049J3c1MjkyYy5leA0KIDJAZ21haWwuY29tJzpNQUlM
+VE86dzUyOTJjLmV4MkBnbWFpbC5jb20NCkRFU0NSSVBUSU9OO0xBTkdVQUdFPWVuLVVTOlRlc3Qg
+Ym9keSBmb3IgT0EwLjAwMDFcblxuDQpTVU1NQVJZO0xBTkdVQUdFPWVuLVVTOlRlc3Qgc3ViamVj
+dCBPQTAuMDAwMQ0KRFRTVEFSVDtUWklEPVJ1c3NpYW4gU3RhbmRhcmQgVGltZToyMDE4MDEyMVQx
+NTMwMDANCkRURU5EO1RaSUQ9UnVzc2lhbiBTdGFuZGFyZCBUaW1lOjIwMTgwMTIxVDE2MDAwMA0K
+VUlEOjA0MDAwMDAwODIwMEUwMDA3NEM1QjcxMDFBODJFMDA4MDAwMDAwMDA0MDc5ODY4NjVEODlE
+MzAxMDAwMDAwMDAwMDAwMDAwDQogMDEwMDAwMDAwMjJGMDE5QzQxQ0UxNzI0RDg0MjlFMEQ3RTAw
+Q0RCRTINCkNMQVNTOlBVQkxJQw0KUFJJT1JJVFk6NQ0KRFRTVEFNUDoyMDE4MDEwOVQxMjIxMzBa
+DQpUUkFOU1A6T1BBUVVFDQpTVEFUVVM6Q09ORklSTUVEDQpTRVFVRU5DRTowDQpMT0NBVElPTjtM
+QU5HVUFHRT1lbi1VUzpUZXN0IGxvY2F0aW9uIE9BMC4wMDAxDQpYLU1JQ1JPU09GVC1DRE8tQVBQ
+VC1TRVFVRU5DRTowDQpYLU1JQ1JPU09GVC1DRE8tT1dORVJBUFBUSUQ6OTkyNTQ4ODM0DQpYLU1J
+Q1JPU09GVC1DRE8tQlVTWVNUQVRVUzpURU5UQVRJVkUNClgtTUlDUk9TT0ZULUNETy1JTlRFTkRF
+RFNUQVRVUzpCVVNZDQpYLU1JQ1JPU09GVC1DRE8tQUxMREFZRVZFTlQ6RkFMU0UNClgtTUlDUk9T
+T0ZULUNETy1JTVBPUlRBTkNFOjENClgtTUlDUk9TT0ZULUNETy1JTlNUVFlQRTowDQpYLU1JQ1JP
+U09GVC1ESVNBTExPVy1DT1VOVEVSOkZBTFNFDQpCRUdJTjpWQUxBUk0NCkRFU0NSSVBUSU9OOlJF
+TUlOREVSDQpUUklHR0VSO1JFTEFURUQ9U1RBUlQ6LVBUMTVNDQpBQ1RJT046RElTUExBWQ0KRU5E
+OlZBTEFSTQ0KRU5EOlZFVkVOVA0KRU5EOlZDQUxFTkRBUg0K
+
+--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_--
+#endif

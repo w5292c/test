@@ -25,6 +25,7 @@
 #include "testbase.h"
 
 #include "utils.h"
+#include "testdata.h"
 
 #include <QDebug>
 #include <wbxml.h>
@@ -73,12 +74,6 @@ TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone), m_reply(NULL)
   mTags.push(0x3040);
   mTags.push(0x4050);
   mTags.push(0x5061);
-
-  QNetworkProxy proxy;
-  proxy.setType(QNetworkProxy::HttpProxy);
-  proxy.setHostName("10.13.11.4");
-  proxy.setPort(8080);
-  QNetworkProxy::setApplicationProxy(proxy);
 
   connect(this, SIGNAL(testignal(IndexId)), this, SLOT(start(IndexId)));
 
@@ -150,7 +145,9 @@ void TestBase::onTimer()
 
   if (IndexIdLast == m_index) {
     m_index = IndexIdNone;
+#if 0
     QCoreApplication::exit();
+#endif /* 0 */
   } else {
     ++m_index;
   }
@@ -169,6 +166,58 @@ void TestBase::authentication(QNetworkReply *reply, QAuthenticator *authenticato
   const QString &passwd = env.value("MY_PASS", "<password>");
   authenticator->setUser(userId);
   authenticator->setPassword(passwd);
+}
+
+
+
+
+void TestBase::sendEmail()
+{
+  const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
+  const QString &serverAddress = env.value("MY_ADDR", "exchange-server.com");
+  const QString &serverPort = env.value("MY_PORT", "443");
+  const QUrl &serverUrl = QUrl(QLatin1String("https://") + serverAddress + ":" + serverPort + "/Microsoft-Server-ActiveSync");
+  const QByteArray &mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <alexander.chumakov@harman.com>").toUtf8();
+
+  QByteArray wbxmlBuffer;
+
+  /* WBXML version 1.3, charset: UTF-8, no string table */
+  wbxmlBuffer.append("\x03\x01\x6A\x00", 4);
+  /* Codepage switch: 'ComposeMail' - 21 (0x15) */
+  wbxmlBuffer.append("\x00\x15", 2);
+  /* <SendMail> */
+  wbxmlBuffer.append("\x45", 1);
+  /* <ClientId> */
+  wbxmlBuffer.append("\x51\x03", 2);
+  wbxmlBuffer.append("4677234947143296961493484255641831");
+  /* </ClientId> */
+  wbxmlBuffer.append("\x00\x01", 2);
+  /* <SaveInSentItems /> */
+  wbxmlBuffer.append("\x08", 1);
+  /* <Mime> */
+  wbxmlBuffer.append("\x50\xC3", 2);
+  wbxmlBuffer.append(mime.length());
+  wbxmlBuffer.append(mime);
+  /* </Mime> */
+  wbxmlBuffer.append("\x00\x01", 2);
+  /* </SendMail> */
+  wbxmlBuffer.append("\x01", 1);
+
+  if (!m_reply) {
+    static QBuffer buffer;
+    buffer.setData(wbxmlBuffer);
+
+    QNetworkRequest request(serverUrl);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/vnd.ms-sync.wbxml");
+    request.setRawHeader("MS-ASProtocolVersion", "14.0");
+    request.setRawHeader("User-Agent", "ASOM");
+    request.setRawHeader("Host", serverAddress.toLatin1());
+    const QString &userName = env.value("MY_USER");
+    const QString &passWord = env.value("MY_PASS");
+    request.setRawHeader("Authorization", "Basic " + QByteArray(QString("%1:%2").arg(userName + "123").arg(passWord + "321").toLatin1()).toBase64());
+    m_reply = m_manager.post(request, &buffer);
+    connect(m_reply, SIGNAL(finished()), this, SLOT(onSendMailReady()));
+  }
 }
 
 void TestBase::sendRequest()
@@ -224,7 +273,8 @@ void TestBase::onOptionsRequestReady()
   delete m_reply;
   m_reply = NULL;
 
-//  sendFolderSyncRequest();
+  /*sendFolderSyncRequest();*/
+  sendEmail();
   qDebug() << "****************************** SYNC ******************************";
 }
 
@@ -276,6 +326,25 @@ void TestBase::onFolderSyncReady()
 
   // Clean-up
   wbxml_tree_destroy(pTree);
+  delete m_reply;
+  m_reply = NULL;
+}
+
+void TestBase::onSendMailReady()
+{
+  qDebug() << "[TestBase::onSendMailReady]: error: " << m_reply->error();
+  qDebug() << "[TestBase::onSendMailReady]: headers: " << m_reply->rawHeaderPairs();
+  const QByteArray &bytes = m_reply->readAll();
+  Utils::hexDump((const unsigned char *)bytes.data(), bytes.size());
+  qDebug() << bytes;
+
+/*  WBXMLTree *pTree = NULL;
+  const WBXMLError wbxmlError = wbxml_tree_from_wbxml((unsigned char *)bytes.data(), bytes.size(), WBXML_LANG_AIRSYNC, &pTree);
+  qDebug() << "[TestBase::onFolderSyncReady]: WBXML result: " << (const char *)wbxml_errors_string(wbxmlError);
+  Utils::logNode(qDebug(), pTree->root);
+
+  // Clean-up
+  wbxml_tree_destroy(pTree);*/
   delete m_reply;
   m_reply = NULL;
 }

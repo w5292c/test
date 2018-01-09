@@ -32,6 +32,7 @@
 #include "sqltest.h"
 #include "calendar.h"
 #include "bintoold.h"
+#include "testdata.h"
 
 #include <QDir>
 #include <QMap>
@@ -151,6 +152,9 @@ int main(int argc, char **argv)
     gettimeofday(&tv, NULL);
     const uint64_t n = (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec/1000;
     printf("Here is the value: %llu\n", n);
+    return 0;
+  } else if (2 == argc && !strcmp(argv[1], "data")) {
+    qDebug() << "Here is the output:" << endl << Data::testMime("\"Test User\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <alexander.chumakov@harman.com>").toLatin1().data();
     return 0;
   }
 

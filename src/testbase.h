@@ -66,6 +66,7 @@ public:
 
 public slots:
   void onTimer();
+  void onSendMailReady();
   void onFolderSyncReady();
   void start(IndexId indexId);
   void onOptionsRequestReady();
@@ -77,6 +78,7 @@ Q_SIGNALS:
   void testignal(IndexId indexId);
 
 private:
+  void sendEmail();
   void sendRequest();
   void sendFolderSyncRequest();
 
