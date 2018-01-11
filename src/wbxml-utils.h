@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Alexander Chumakov
+ * Copyright (c) 2018 Alexander Chumakov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,15 @@
  * SOFTWARE.
  */
 
-#ifndef TEST_UTILS_H
-#define TEST_UTILS_H
+#ifndef TEST_WBXML_UTILS_H
+#define TEST_WBXML_UTILS_H
 
-#include <QtCore/qstring.h>
-#include <QtCore/qdebug.h>
+#include <stdint.h>
+#include <QByteArray>
 
-typedef struct WBXMLTag_s WBXMLTag;
-typedef struct WBXMLTreeNode_s WBXMLTreeNode;
-typedef struct WBXMLAttributeName_s WBXMLAttributeName;
-class Utils
-{
+class Wbxml {
 public:
-  static void wbxmlTest();
-  static void iconvTest();
-  static void wbxmlIntTest();
-  static void testTextCodec();
-  static void registerAccount();
-  static void hexDump(const char *pData);
-  static void hexDump(const QByteArray &data);
-  static void hexDump(const unsigned char *pData, int length);
-  static QString hexTreeNodeType(int treeNodeType);
-  static QDebug logNodeName(QDebug debug, WBXMLTag *nodeName);
-  static QDebug logNode(QDebug debug, WBXMLTreeNode *node, int level = 0);
-  static uint getUint32(const QByteArray &buffer, uint startIndex);
+  static void appendInt(QByteArray &buffer, uint32_t value);
 };
 
-#endif /* TEST_UTILS_H */
+#endif /* TEST_WBXML_UTILS_H */

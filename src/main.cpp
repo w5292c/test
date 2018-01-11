@@ -40,6 +40,7 @@
 #include <time.h>
 #include <wbxml.h>
 #include <string.h>
+#include <inttypes.h>
 #include <wbxml_conv.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -95,6 +96,9 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "wbxml")) {
     Utils::wbxmlTest();
     return 0;
+  } else if (2 == argc && !strcmp(argv[1], "wbxml-int")) {
+    Utils::wbxmlIntTest();
+    return 0;
   } else if (2 == argc && !strcmp(argv[1], "endian")) {
     QByteArray buffer;
     buffer.append("\x00\x01\x02\x03\x04\x05", 6);
@@ -133,7 +137,8 @@ int main(int argc, char **argv)
     test_mosq();
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "systime")) {
-    struct timespec time = {0};
+    timespec time;
+    memset(&time, 0, sizeof (time));
 
     if (clock_getres(CLOCK_MONOTONIC, &time)) {
       fprintf(stderr, "Error: cannot get resolution\n");
@@ -151,11 +156,14 @@ int main(int argc, char **argv)
     struct timeval tv;
     gettimeofday(&tv, NULL);
     const uint64_t n = (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec/1000;
-    printf("Here is the value: %llu\n", n);
+    printf("Here is the value: %" PRIu64 "\n", n);
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "data")) {
     qDebug() << "Here is the output:" << endl << Data::testMime("\"Test User\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <alexander.chumakov@harman.com>").toLatin1().data();
     return 0;
+  } else if (argc >= 2) {
+    qDebug() << "Warning: unknown argument(s): ["  << argv[1] << "]";
+    return 1;
   }
 
   TestBase *test = new TestBase();

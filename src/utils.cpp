@@ -24,9 +24,12 @@
 
 #include "utils.h"
 
+#include "wbxml-utils.h"
+
 #include <glib.h>
 #include <QDebug>
 #include <wbxml.h>
+#include <assert.h>
 #include <string.h>
 #include <QTextCodec>
 #include <SignOn/Identity>
@@ -94,6 +97,11 @@ void Utils::hexDump(const char *pData)
 {
   const int length = strlen (pData);
   hexDump (reinterpret_cast<const unsigned char *>(pData), length);
+}
+
+void Utils::hexDump(const QByteArray &data)
+{
+  hexDump(reinterpret_cast<const unsigned char *>(data.data()), data.length());
 }
 
 void Utils::hexDump(const unsigned char *pData, int length)
@@ -277,6 +285,77 @@ void Utils::wbxmlTest()
   Q_ASSERT(result == WBXML_OK);
   Q_UNUSED(result);
   qDebug() << "Length: " << xml_len << "Data:\r\n" << (const char *)xml;
+}
+
+void Utils::wbxmlIntTest()
+{
+  QByteArray buffer;
+
+  qDebug() << "Encoding single-byte value (0x75)";
+  Wbxml::appendInt(buffer, 0x75);
+  assert(buffer.length() == 1);
+  assert(buffer[0] == '\x75');
+
+  qDebug() << "Encoding single-byte value (0x00)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0x00);
+  assert(buffer.length() == 1);
+  assert(buffer[0] == '\x00');
+
+  qDebug() << "Encoding two-byte value (0xA0)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0xA0);
+  assert(buffer.length() == 2);
+  assert(buffer[0] == '\x81');
+  assert(buffer[1] == '\x20');
+
+  qDebug() << "Encoding two-byte value (0x3FFF)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0x3FFFU);
+  assert(buffer.length() == 2);
+  assert(buffer[0] == '\xFF');
+  assert(buffer[1] == '\x7F');
+
+  qDebug() << "Encoding three-byte value (0x4000)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0x4000U);
+  assert(buffer.length() == 3);
+  assert(buffer[0] == '\x81');
+  assert(buffer[1] == '\x80');
+  assert(buffer[2] == '\x00');
+
+  qDebug() << "Encoding five-byte value (0xFFFFFFFFU)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0xFFFFFFFFU);
+  assert(buffer.length() == 5);
+  assert(buffer[0] == '\x8F');
+  assert(buffer[1] == '\xFF');
+  assert(buffer[2] == '\xFF');
+  assert(buffer[3] == '\xFF');
+  assert(buffer[4] == '\x7F');
+
+  qDebug() << "Encoding five-byte value (0xFEDCBA98U)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0xFEDCBA98U);
+  assert(buffer.length() == 5);
+  assert(buffer[0] == '\x8F');
+  assert(buffer[1] == '\xF6');
+  assert(buffer[2] == '\xF2');
+  assert(buffer[3] == '\xF5');
+  assert(buffer[4] == '\x18');
+
+  qDebug() << "Encoding five-byte value (0xFFFFFFFFU) plus two-byte value (0x3FFF)";
+  buffer.clear();
+  Wbxml::appendInt(buffer, 0xFEDCBA98U);
+  Wbxml::appendInt(buffer, 0x3FFF);
+  assert(buffer.length() == 7);
+  assert(buffer[0] == '\x8F');
+  assert(buffer[1] == '\xF6');
+  assert(buffer[2] == '\xF2');
+  assert(buffer[3] == '\xF5');
+  assert(buffer[4] == '\x18');
+  assert(buffer[5] == '\xFF');
+  assert(buffer[6] == '\x7F');
 }
 
 uint Utils::getUint32(const QByteArray &buffer, uint startIndex)

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2014 Alexander Chumakov
+ * Copyright (c) 2018 Alexander Chumakov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,30 @@
  * SOFTWARE.
  */
 
-#ifndef TEST_UTILS_H
-#define TEST_UTILS_H
+#include <wbxml-utils.h>
 
-#include <QtCore/qstring.h>
-#include <QtCore/qdebug.h>
-
-typedef struct WBXMLTag_s WBXMLTag;
-typedef struct WBXMLTreeNode_s WBXMLTreeNode;
-typedef struct WBXMLAttributeName_s WBXMLAttributeName;
-class Utils
+void Wbxml::appendInt(QByteArray &buffer, uint32_t value)
 {
-public:
-  static void wbxmlTest();
-  static void iconvTest();
-  static void wbxmlIntTest();
-  static void testTextCodec();
-  static void registerAccount();
-  static void hexDump(const char *pData);
-  static void hexDump(const QByteArray &data);
-  static void hexDump(const unsigned char *pData, int length);
-  static QString hexTreeNodeType(int treeNodeType);
-  static QDebug logNodeName(QDebug debug, WBXMLTag *nodeName);
-  static QDebug logNode(QDebug debug, WBXMLTreeNode *node, int level = 0);
-  static uint getUint32(const QByteArray &buffer, uint startIndex);
-};
+  // Bit fields:
+  // 0000 0000    0000 0000    0000 0000    0000 0000
+  //                                         ________ : Byte N
+  //                             __ ____    _         : Byte N - 1
+  //                 _ ____    __                     : Byte N - 2
+  //      ____    ___                                 : Byte N - 3
+  // ____                                             : Byte N - 4
 
-#endif /* TEST_UTILS_H */
+  unsigned int i = 5;
+  bool appended = false;
+  do {
+    --i;
+
+    uint8_t byte = static_cast<uint8_t>((value >> (7*i)) & 0x7FU);
+    if (byte || appended || !i) {
+      if (i) {
+        byte |= 0x80U;
+      }
+      buffer.append(byte);
+      appended = true;
+    }
+  } while (i);
+}

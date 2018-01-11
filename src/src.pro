@@ -30,7 +30,8 @@ HEADERS += \
   sqltest.h \
   masn1.h \
   mosq.h \
-  testdata.h
+  testdata.h \
+  wbxml-utils.h
 
 SOURCES += \
   main.cpp \
@@ -42,4 +43,5 @@ SOURCES += \
   sqltest.cpp \
   masn1.c \
   mosq.c \
-  testdata.cpp
+  testdata.cpp \
+  wbxml-utils.cpp
