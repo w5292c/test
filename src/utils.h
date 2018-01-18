@@ -25,8 +25,9 @@
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 
-#include <QtCore/qstring.h>
 #include <QtCore/qdebug.h>
+#include <QtCore/qstring.h>
+#include <QtCore/qbytearray.h>
 
 typedef struct WBXMLTag_s WBXMLTag;
 typedef struct WBXMLTreeNode_s WBXMLTreeNode;
@@ -39,6 +40,8 @@ public:
   static void wbxmlIntTest();
   static void testTextCodec();
   static void registerAccount();
+  static QByteArray random64();
+  static QByteArray hexRandom64();
   static void hexDump(const char *pData);
   static void hexDump(const QByteArray &data);
   static void hexDump(const unsigned char *pData, int length);

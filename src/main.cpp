@@ -164,6 +164,7 @@ int main(int argc, char **argv)
     return 0;
   } else if (3 != argc || strcmp(argv[1], "send")) {
     qDebug() << "Warning: unknown argument(s): ["  << argv[1] << "]";
+    qDebug() << Utils::hexRandom64();
     return 1;
   }
 

@@ -191,7 +191,7 @@ void TestBase::sendEmail()
 
   QByteArray mime;
   if (m_calendarResponse) {
-    mime = Data::testMime2("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
+    mime = Data::testMime3("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
   } else {
     mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
   }
@@ -206,7 +206,7 @@ void TestBase::sendEmail()
   wbxmlBuffer.append("\x45", 1);
   /* <ClientId> */
   wbxmlBuffer.append("\x51\x03", 2);
-  const QByteArray &clientMailId = Wbxml::random64();
+  const QByteArray &clientMailId = Utils::random64();
   qDebug() << "New client ID: " << clientMailId;
   wbxmlBuffer.append(clientMailId);
   /* </ClientId> */

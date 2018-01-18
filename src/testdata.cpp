@@ -24,6 +24,8 @@
 
 #include "testdata.h"
 
+#include "utils.h"
+
 QString Data::testMime(const QString &from, const QString &to)
 {
   return QString(
@@ -147,32 +149,97 @@ QString Data::testMime2(const QString &from, const QString &to)
 "METHOD:REPLY\r\n"
 "PRODID:Test ActiveSync client w5292c\r\n"
 "VERSION:2.0\r\n"
-"CALSCALE:GREGORIAN\r\n"
 "BEGIN:VEVENT\r\n"
 "ORGANIZER;CN=\"Chumakov, Alexander\":w5292c.ex2@gmail.com\r\n"
 "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED:w5292c@outlook.com\r\n"
-"DESCRIPTION;LANGUAGE=en-US:Test body for OA0.0001\\n\\n\r\n"
-"SUMMARY;LANGUAGE=en-US:Test subject OA0.0001\r\n"
+"SUMMARY:Test subject OA0.0001\r\n"
 "DTSTART:20180121T153000Z\r\n"
 "DTEND:20180121T160000Z\r\n"
 "UID:040000008200E00074C5B7101A82E00800000000407986865D89D301000000000000000\r\n"
-" 01000000022F019C41CE1724D8429E0D7E00CDBEC\r\n"
+" 01000000022F019C41CE1724D8429E0D7E00CDBF1\r\n"
 "PRIORITY:5\r\n"
 "DTSTAMP:20180109T122132Z\r\n"
 "TRANSP:OPAQUE\r\n"
 "STATUS:CONFIRMED\r\n"
-"SEQUENCE:1\r\n"
-"LOCATION;LANGUAGE=en-US:Test location OA0.0001\r\n"
-"X-MICROSOFT-CDO-APPT-SEQUENCE:0\r\n"
-"X-MICROSOFT-CDO-OWNERAPPTID:992548834\r\n"
+"LOCATION:Test location OA0.0001\r\n"
+"X-MICROSOFT-CDO-APPT-SEQUENCE:1\r\n"
 "X-MICROSOFT-CDO-BUSYSTATUS:TENTATIVE\r\n"
-"X-MICROSOFT-CDO-INTENDEDSTATUS:BUSY\r\n"
 "X-MICROSOFT-CDO-ALLDAYEVENT:FALSE\r\n"
 "X-MICROSOFT-CDO-IMPORTANCE:1\r\n"
 "X-MICROSOFT-CDO-INSTTYPE:0\r\n"
-"X-MICROSOFT-DISALLOW-COUNTER:FALSE\r\n"
 "END:VEVENT\r\n"
 "END:VCALENDAR\r\n"
 "\r\n"
 "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_--\r\n").arg(from).arg(to);
+}
+
+QString Data::testMime3(const QString &from, const QString &to)
+{
+  QString ical = QString(
+    "BEGIN:VCALENDAR\r\n"
+    "METHOD:REPLY\r\n"
+    "PRODID:Test ActiveSync client w5292c\r\n"
+    "VERSION:2.0\r\n"
+    "BEGIN:VEVENT\r\n"
+    "ORGANIZER;CN=\"Chumakov, Alexander\":w5292c.ex2@gmail.com\r\n"
+    "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED:w5292c@outlook.com\r\n"
+    "SUMMARY:Test subject OA0.0001\r\n"
+    "DTSTART:20180121T153000Z\r\n"
+    "DTEND:20180121T160000Z\r\n"
+    "UID:040000008200E00074C5B7101A82E00800000000407986865D89D301000000000000000\r\n"
+    " 01000000022F019C41CE1724D%1\r\n"
+    "PRIORITY:5\r\n"
+    "DTSTAMP:20180109T122132Z\r\n"
+    "TRANSP:OPAQUE\r\n"
+    "STATUS:CONFIRMED\r\n"
+    "LOCATION:Test location OA0.0001\r\n"
+    "X-MICROSOFT-CDO-APPT-SEQUENCE:1\r\n"
+    "X-MICROSOFT-CDO-BUSYSTATUS:TENTATIVE\r\n"
+    "X-MICROSOFT-CDO-ALLDAYEVENT:FALSE\r\n"
+    "X-MICROSOFT-CDO-IMPORTANCE:1\r\n"
+    "X-MICROSOFT-CDO-INSTTYPE:0\r\n"
+    "END:VEVENT\r\n"
+    "END:VCALENDAR\r\n"
+    ).arg(QString(Utils::hexRandom64()));
+
+  QString mime = QString(
+    "From: %1\r\n"
+    "To: %2\r\n"
+    "Subject: Test subject OA0.0002 response\r\n"
+    "Content-Type: multipart/alternative;\r\n"
+    "   boundary=\"_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\"\r\n"
+    "MIME-Version: 1.0\r\n"
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
+    "Content-Type: text/plain; charset=\"iso-8859-1\"\r\n"
+    "Content-Transfer-Encoding: quoted-printable\r\n"
+    "\r\n"
+    "Test body for OA0.0002 response\r\n"
+    "\r\n"
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
+    "Content-Type: text/html; charset=\"iso-8859-1\"\r\n"
+    "Content-Transfer-Encoding: quoted-printable\r\n"
+    "\r\n"
+    "<html>\r\n"
+    "<head>\r\n"
+    "</head>\r\n"
+    "<body>\r\n"
+    "<div>Test body for OA0.0002 response</div>\r\n"
+    "</body>\r\n"
+    "</html>\r\n"
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
+    "Content-Type: text/calendar; charset=\"utf-8\"; method=REPLY\r\n"
+    "Content-Transfer-Encoding: 7BIT\r\n"
+    "\r\n").arg(from).arg(to);
+
+  mime.append(ical);
+
+  mime.append(
+    "\r\n"
+    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_--\r\n"
+  );
+
+  return mime;
 }

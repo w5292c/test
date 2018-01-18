@@ -369,3 +369,31 @@ uint Utils::getUint32(const QByteArray &buffer, uint startIndex)
 
     return result;
 }
+
+QByteArray Utils::random64()
+{
+  union {
+    qulonglong value;
+    uint8_t buffer[8];
+  } randomData;
+
+  for (int i = 0; i < 8; ++i) {
+    randomData.buffer[i] = (uint8_t)rand();
+  }
+
+  return QByteArray::number(randomData.value);
+}
+
+QByteArray Utils::hexRandom64()
+{
+  union {
+    qulonglong value;
+    uint8_t buffer[8];
+  } randomData;
+
+  for (int i = 0; i < 8; ++i) {
+    randomData.buffer[i] = (uint8_t)rand();
+  }
+
+  return QByteArray::number(randomData.value, 16);
+}
