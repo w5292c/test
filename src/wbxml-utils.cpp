@@ -24,6 +24,20 @@
 
 #include <wbxml-utils.h>
 
+QByteArray Wbxml::random64()
+{
+  union {
+    qulonglong value;
+    uint8_t buffer[8];
+  } randomData;
+
+  for (int i = 0; i < 8; ++i) {
+    randomData.buffer[i] = (uint8_t)rand();
+  }
+
+  return QByteArray::number(randomData.value);
+}
+
 void Wbxml::appendInt(QByteArray &buffer, uint32_t value)
 {
   // Bit fields:

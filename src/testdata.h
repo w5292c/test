@@ -30,6 +30,7 @@
 class Data {
 public:
   static QString testMime(const QString &from, const QString &to);
+  static QString testMime2(const QString &from, const QString &to);
 };
 
 #endif /* TEST_DATA_H */

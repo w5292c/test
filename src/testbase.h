@@ -57,7 +57,7 @@ public:
     IndexIdLast
   };
 
-  TestBase();
+  TestBase(bool calendarResponse);
   virtual ~TestBase();
 
   int getValue() const;
@@ -89,6 +89,7 @@ private:
   QStack<uint> mTags;
   QNetworkReply *m_reply;
   QNetworkAccessManager m_manager;
+  bool m_calendarResponse;
 };
 
 Q_DECLARE_METATYPE(TestBase::IndexId)

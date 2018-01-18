@@ -65,6 +65,7 @@ QMap<int, QString> TheMap;
 int main(int argc, char **argv)
 {
   QCoreApplication app(argc, argv);
+  srand(time(NULL));
   CalendarTest::init();
 
   if (2 == argc && !strcmp(argv[1], "reg")) {
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
     Utils::iconvTest();
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "check-test")) {
-    TestBase testBase;
+    TestBase testBase(false);
     qDebug() << "MAIN result (expected: false): " << testBase.checkTags(0x1020u, 0x2030u, 0x3040, 0x4051, 0x5061);
     qDebug() << "MAIN result (expected:  true): " << testBase.checkTags(0x1020u, 0x2030u, 0x3040, 0x4050, 0x5061);
     return 0;
@@ -127,7 +128,7 @@ int main(int argc, char **argv)
     test_sql();
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "sql")) {
-    TestBase testObject;
+    TestBase testObject(false);
 
     return 0;
   } else if (2 == argc && !strcmp(argv[1], "asn1")) {
@@ -161,12 +162,18 @@ int main(int argc, char **argv)
   } else if (2 == argc && !strcmp(argv[1], "data")) {
     qDebug() << "Here is the output:" << endl << Data::testMime("\"Test User\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <alexander.chumakov@harman.com>").toLatin1().data();
     return 0;
-  } else if (argc >= 2) {
+  } else if (3 != argc || strcmp(argv[1], "send")) {
     qDebug() << "Warning: unknown argument(s): ["  << argv[1] << "]";
     return 1;
   }
 
-  TestBase *test = new TestBase();
+  bool calendarResponse = !strcmp(argv[2], "rsp");
+  if (calendarResponse) {
+    qDebug() << "Test sending calendar response";
+  } else {
+    qDebug() << "Test sending calendar invitation";
+  }
+  TestBase *const test = new TestBase(calendarResponse);
 
 #if 0
 

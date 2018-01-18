@@ -30,6 +30,7 @@
 
 class Wbxml {
 public:
+  static QByteArray random64();
   static void appendInt(QByteArray &buffer, uint32_t value);
 };
 

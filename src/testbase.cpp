@@ -26,6 +26,7 @@
 
 #include "utils.h"
 #include "testdata.h"
+#include "wbxml-utils.h"
 
 #include <QDebug>
 #include <wbxml.h>
@@ -68,7 +69,11 @@ const QLatin1String folderSyncSuffix("/Microsoft-Server-ActiveSync?Cmd=FolderSyn
 /*!
     Constructs a test object with zero value.
 */
-TestBase::TestBase() : m_value(0), m_index(TestBase::IndexIdNone), m_reply(NULL)
+TestBase::TestBase(bool calendarResponse) :
+  m_value(0),
+  m_index(TestBase::IndexIdNone),
+  m_reply(NULL),
+  m_calendarResponse(calendarResponse)
 {
   QCoreApplication::quit();
 
@@ -182,7 +187,14 @@ void TestBase::sendEmail()
   const QUrl &serverUrl = QUrl(QLatin1String("https://") + serverAddress + ":" + serverPort + sendMailSuffix);
   const QString &userName = env.value("MY_USER");
   const QString &passWord = env.value("MY_PASS");
-  const QByteArray &mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
+
+
+  QByteArray mime;
+  if (m_calendarResponse) {
+    mime = Data::testMime2("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
+  } else {
+    mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
+  }
 
   QByteArray wbxmlBuffer;
 
@@ -194,18 +206,16 @@ void TestBase::sendEmail()
   wbxmlBuffer.append("\x45", 1);
   /* <ClientId> */
   wbxmlBuffer.append("\x51\x03", 2);
-  wbxmlBuffer.append("4677234947143296961493484255641840");
+  const QByteArray &clientMailId = Wbxml::random64();
+  qDebug() << "New client ID: " << clientMailId;
+  wbxmlBuffer.append(clientMailId);
   /* </ClientId> */
   wbxmlBuffer.append("\x00\x01", 2);
   /* <SaveInSentItems /> */
   wbxmlBuffer.append("\x08", 1);
   /* <Mime> */
   wbxmlBuffer.append("\x50\xC3", 2);
-  uint16_t length = mime.length();
-  length = (length & 0x7FU) | ((length & 0x3F80) << 1);
-  wbxmlBuffer.append(0x80u | (length >> 8));
-  wbxmlBuffer.append(length);
-//  wbxmlBuffer.append(mime.length());
+  Wbxml::appendInt(wbxmlBuffer, mime.length());
   wbxmlBuffer.append(mime);
   /* </Mime> */
   wbxmlBuffer.append("\x01", 1);
@@ -222,11 +232,6 @@ void TestBase::sendEmail()
 
   static QBuffer buffer;
   buffer.setData(wbxmlBuffer);
-
-/*  QUrlQuery query;
-  query.addQueryItem("Cmd", "SendMail");
-  query.addQueryItem("User", userName);
-  query.addQueryItem("DeviceId", "");*/
 
   QNetworkRequest request(serverUrl);
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/vnd.ms-sync.wbxml");
