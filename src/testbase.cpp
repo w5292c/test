@@ -191,10 +191,14 @@ void TestBase::sendEmail()
 
   QByteArray mime;
   if (m_calendarResponse) {
-    mime = Data::testMime3("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
+    mime = Data::testMime3("w5292c@outlook.com", "w5292c.ex2@gmail.com").toUtf8();
   } else {
-    mime = Data::testMime("\"Test1\" <w5292c@outlook.com>", "\"Alexander Chumakov\" <w5292c.ex2@gmail.com>").toUtf8();
+    mime = Data::testMime("w5292c@outlook.com", "w5292c.ex2@gmail.com").toUtf8();
   }
+
+  qDebug() << "****************************************  MIME  *****************************************************";
+  qDebug() << mime.data();
+  qDebug() << "**************************************  MIME END  ***************************************************";
 
   QByteArray wbxmlBuffer;
 

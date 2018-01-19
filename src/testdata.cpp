@@ -26,6 +26,13 @@
 
 #include "utils.h"
 
+#include <icalformat.h>
+#include <QProcessEnvironment>
+
+namespace {
+QString testIcalData(const QString &from, const QString &to, bool response);
+}
+
 QString Data::testMime(const QString &from, const QString &to)
 {
   return QString(
@@ -175,6 +182,7 @@ QString Data::testMime2(const QString &from, const QString &to)
 
 QString Data::testMime3(const QString &from, const QString &to)
 {
+#if 0
   QString ical = QString(
     "BEGIN:VCALENDAR\r\n"
     "METHOD:REPLY\r\n"
@@ -201,6 +209,9 @@ QString Data::testMime3(const QString &from, const QString &to)
     "END:VEVENT\r\n"
     "END:VCALENDAR\r\n"
     ).arg(QString(Utils::hexRandom64()));
+#endif /* 0 */
+
+  const QString &ical = testIcalData(from, to, true);
 
   QString mime = QString(
     "From: %1\r\n"
@@ -243,3 +254,68 @@ QString Data::testMime3(const QString &from, const QString &to)
 
   return mime;
 }
+
+namespace {
+QString testIcalData(const QString &from, const QString &to, bool response)
+{
+  const QString &defaultUid = QString("040000008200E00074C5B7101A82E00800000000407986865D89D30100000000000000001000000022F019C41CE1724D%1").arg(QString(Utils::hexRandom64()));
+  const QProcessEnvironment &env = QProcessEnvironment::systemEnvironment();
+  const QString &eventUid = env.value("MY_UID", defaultUid);
+
+  KCalCore::Event::Ptr event(new KCalCore::Event);
+  event->setSchedulingID(eventUid);
+  event->setLocation("Test room AB10.12");
+  event->setStatus(KCalCore::Incidence::StatusConfirmed);
+  event->setDtStart(KDateTime::fromString("20180121T180000Z"));
+  event->setDtEnd(KDateTime::fromString(  "20180121T190000Z"));
+  event->setSummary("Test event N2.0001", false);
+  event->setPriority(5);
+  event->setTransparency(KCalCore::Event::Opaque);
+  event->setRevision(0);
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-APPT-SEQUENCE", "0");
+  event->setNonKDECustomProperty("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
+
+  KCalCore::Attendee::Ptr attendee(new KCalCore::Attendee(
+    "Attendee",
+    response ? from : to,
+    true,
+    KCalCore::Attendee::Accepted,
+    KCalCore::Attendee::ReqParticipant));
+  event->addAttendee(attendee);
+
+  KCalCore::ICalFormat icf;
+  const QString &ical = icf.createScheduleMessage(event, KCalCore::iTIPReply);
+  qDebug() << "Here is the iCalendar data:" << endl
+           << "********************************************************************************" << endl
+           << (const char *)ical.toLatin1().data()
+           << "\r********************************************************************************";
+
+  return ical;
+}
+}
+
+/*
+# Correct response:
+#ATTENDEE;PARTSTAT=ACCEPTED;CN="Chumakov, Alexander":MAILTO:Alexander.Chumakov
+# @harman.com
+#COMMENT;LANGUAGE=en-US:\n\n
+#SUMMARY;LANGUAGE=en-US:Accepted: [EXTERNAL] Invitation: Test event N2.0001
+# @ Sun 21 Jan 2018   18:00 - 19:00 (MSK) (alexander.chumakov@harman.com)
+DTSTART;TZID=Russian Standard Time:20180121T180000
+DTEND;TZID=Russian Standard Time:20180121T190000
+UID:08fqr3afnmdmrssh1vff3sd316@google.com
+CLASS:PUBLIC
+PRIORITY:5
+DTSTAMP:20180119T113855Z
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+SEQUENCE:0
+LOCATION;LANGUAGE=en-US:Test room AB10.12
+X-MICROSOFT-CDO-APPT-SEQUENCE:0
+X-MICROSOFT-CDO-BUSYSTATUS:BUSY
+X-MICROSOFT-CDO-INTENDEDSTATUS:BUSY
+X-MICROSOFT-CDO-ALLDAYEVENT:FALSE
+X-MICROSOFT-CDO-IMPORTANCE:1
+X-MICROSOFT-CDO-INSTTYPE:0
+X-MICROSOFT-DISALLOW-COUNTER:FALSE
+*/
