@@ -27,6 +27,7 @@
 #include "utils.h"
 
 #include <icalformat.h>
+#include <qmailmessage.h>
 #include <QProcessEnvironment>
 
 namespace {
@@ -182,75 +183,50 @@ QString Data::testMime2(const QString &from, const QString &to)
 
 QString Data::testMime3(const QString &from, const QString &to)
 {
-#if 0
-  QString ical = QString(
-    "BEGIN:VCALENDAR\r\n"
-    "METHOD:REPLY\r\n"
-    "PRODID:Test ActiveSync client w5292c\r\n"
-    "VERSION:2.0\r\n"
-    "BEGIN:VEVENT\r\n"
-    "ORGANIZER;CN=\"Chumakov, Alexander\":w5292c.ex2@gmail.com\r\n"
-    "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED:w5292c@outlook.com\r\n"
-    "SUMMARY:Test subject OA0.0001\r\n"
-    "DTSTART:20180121T153000Z\r\n"
-    "DTEND:20180121T160000Z\r\n"
-    "UID:040000008200E00074C5B7101A82E00800000000407986865D89D301000000000000000\r\n"
-    " 01000000022F019C41CE1724D%1\r\n"
-    "PRIORITY:5\r\n"
-    "DTSTAMP:20180109T122132Z\r\n"
-    "TRANSP:OPAQUE\r\n"
-    "STATUS:CONFIRMED\r\n"
-    "LOCATION:Test location OA0.0001\r\n"
-    "X-MICROSOFT-CDO-APPT-SEQUENCE:1\r\n"
-    "X-MICROSOFT-CDO-BUSYSTATUS:TENTATIVE\r\n"
-    "X-MICROSOFT-CDO-ALLDAYEVENT:FALSE\r\n"
-    "X-MICROSOFT-CDO-IMPORTANCE:1\r\n"
-    "X-MICROSOFT-CDO-INSTTYPE:0\r\n"
-    "END:VEVENT\r\n"
-    "END:VCALENDAR\r\n"
-    ).arg(QString(Utils::hexRandom64()));
-#endif /* 0 */
-
+  /* Get the ICALENDAR data first */
   const QString &ical = testIcalData(from, to, true);
 
-  QString mime = QString(
-    "From: %1\r\n"
-    "To: %2\r\n"
-    "Subject: Test subject OA0.0002 response\r\n"
-    "Content-Type: multipart/alternative;\r\n"
-    "   boundary=\"_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\"\r\n"
-    "MIME-Version: 1.0\r\n"
-    "\r\n"
-    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
-    "Content-Type: text/plain; charset=\"iso-8859-1\"\r\n"
-    "Content-Transfer-Encoding: quoted-printable\r\n"
-    "\r\n"
-    "Test body for OA0.0002 response\r\n"
-    "\r\n"
-    "\r\n"
-    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
-    "Content-Type: text/html; charset=\"iso-8859-1\"\r\n"
-    "Content-Transfer-Encoding: quoted-printable\r\n"
-    "\r\n"
-    "<html>\r\n"
-    "<head>\r\n"
-    "</head>\r\n"
-    "<body>\r\n"
-    "<div>Test body for OA0.0002 response</div>\r\n"
-    "</body>\r\n"
-    "</html>\r\n"
-    "\r\n"
-    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_\r\n"
-    "Content-Type: text/calendar; charset=\"utf-8\"; method=REPLY\r\n"
-    "Content-Transfer-Encoding: 7BIT\r\n"
-    "\r\n").arg(from).arg(to);
+  // Build a message
+  QMailMessage message;
 
-  mime.append(ical);
+  // Setup message status
+  message.setStatus(QMailMessage::Outbox, true);
+  message.setStatus(QMailMessage::Outgoing, true);
+  message.setStatus(QMailMessage::ContentAvailable, true);
+  message.setStatus(QMailMessage::PartialContentAvailable, true);
+  message.setStatus(QMailMessage::Read, true);
+  message.setDate(QMailTimeStamp(QDateTime::currentDateTime()));
 
-  mime.append(
-    "\r\n"
-    "--_000_6386444f7f19453ba396a9ec3e14f76bHIMDWSMB02adharmancom_--\r\n"
-  );
+  // Define recipeint's address
+  message.setTo(QList<QMailAddress>() << QMailAddress(to));
+  // Define from address
+  message.setFrom(QMailAddress(from));
+  // Define subject
+  message.setSubject("Reponse: Test event N2.0001");
+  message.setMessageType(QMailMessage::Email);
+  message.setMultipartType(QMailMessagePartContainerFwd::MultipartAlternative);
+
+  // Create the MIME part representing the message body
+  QMailMessagePart bodyPart = QMailMessagePart::fromData(
+    QString("Test body for OA0.0002 response"),
+    QMailMessageContentDisposition(QMailMessageContentDisposition::None),
+    QMailMessageContentType("text/plain; charset=\"utf-8\""),
+    QMailMessageBody::QuotedPrintable);
+  bodyPart.removeHeaderField("Content-Disposition");
+
+  // Create the calendar MIME part
+  QMailMessagePart calendarPart = QMailMessagePart::fromData(
+    ical,
+    QMailMessageContentDisposition(QMailMessageContentDisposition::None),
+    QMailMessageContentType("text/calendar; charset=\"utf-8\"; method=REQUEST"),
+    QMailMessageBody::Base64);
+  calendarPart.removeHeaderField("Content-Disposition");
+  calendarPart.appendHeaderField("Content-Class","urn:content-classes:calendarmessage");
+
+  message.appendPart(bodyPart);
+  message.appendPart(calendarPart);
+
+  const QString &mime = message.toRfc2822();
 
   return mime;
 }

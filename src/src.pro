@@ -12,7 +12,8 @@ PKGCONFIG += \
   uuid \
   libical \
   sqlite3 \
-  libcrypto
+  libcrypto \
+  qmfclient5
 
 LIBS += -lmosquitto
 
